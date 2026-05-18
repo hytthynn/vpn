@@ -10,7 +10,7 @@ const NGINX_COOKIE = 'iaKQrsnp=gCqXPowZ';
 const YOOMONEY_SECRET = 'ccRzWFtoDUTkuxPz8J3rUPJ8';
 
 // Номер кошелька ЮMoney — для формирования ссылки оплаты
-export const WALLET_ID = ''; // ← вставьте номер кошелька (напр. '4100116XXXXXXXXX')
+export const WALLET_ID = '4100118505804569'; // ← вставьте номер кошелька (напр. '4100116XXXXXXXXX')
 
 // Планы: label → кол-во дней подписки
 const PLANS = {
