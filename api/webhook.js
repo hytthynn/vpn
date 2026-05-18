@@ -29,12 +29,38 @@ const CORS = {
 
 async function verifySign(params) {
   const receivedHash = params.get('sha1_hash');
-  if (!receivedHash) return false;
-  const FIELDS = ['notification_type','operation_id','amount','currency','datetime','sender','codepro','notification_secret','label'];
-  const str = FIELDS.map(f => f === 'notification_secret' ? YOOMONEY_SECRET : (params.get(f) ?? '')).join('&');
+  if (!receivedHash) {
+    console.warn('[sign] no sha1_hash. params:', JSON.stringify(Object.fromEntries(params)));
+    return false;
+  }
+
+  if (!YOOMONEY_SECRET) {
+    console.error('[sign] YOOMONEY_SECRET is not set! Check env vars.');
+    return false;
+  }
+
+  const FIELDS = [
+    'notification_type', 'operation_id', 'amount', 'currency',
+    'datetime', 'sender', 'codepro', 'notification_secret', 'label',
+  ];
+  const str = FIELDS.map(f =>
+    f === 'notification_secret' ? YOOMONEY_SECRET : (params.get(f) ?? '')
+  ).join('&');
+
   const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(str));
   const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return hex === receivedHash;
+
+  if (hex !== receivedHash) {
+    console.warn('[sign] MISMATCH');
+    console.warn('[sign] received :', receivedHash);
+    console.warn('[sign] computed :', hex);
+    console.warn('[sign] secret len:', YOOMONEY_SECRET.length);
+    console.warn('[sign] str (masked):', str.replace(YOOMONEY_SECRET, '***SECRET***'));
+    console.warn('[sign] all params  :', JSON.stringify(Object.fromEntries(params)));
+    return false;
+  }
+
+  return true;
 }
 
 // label: averra_<tgId>_<plan>
