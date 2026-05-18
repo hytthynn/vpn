@@ -1,11 +1,7 @@
 {
-  "functions": {
-    "api/proxy.js":   { "maxDuration": 10 },
-    "api/webhook.js": { "maxDuration": 10 }
-  },
   "rewrites": [
-    { "source": "/api/proxy",   "destination": "/api/proxy.js" },
-    { "source": "/api/webhook", "destination": "/api/webhook.js" },
+    { "source": "/api/webhook", "destination": "/webhook" },
+    { "source": "/api/proxy",   "destination": "/proxy"   },
     { "source": "/(.*)",        "destination": "/index.html" }
   ]
 }
