@@ -273,6 +273,8 @@
   </div>
 </div>
 
+<div id="debug-box"></div>
+
 <div class="actions">
   <button class="btn-primary" id="buy-btn">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -560,15 +562,18 @@ async function loadUserData() {
     dot.classList.toggle('inactive', st === 'UNKNOWN');
     stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
 
+    // ── ОТЛАДКА: показываем все поля пользователя ──
+    const debugEl = document.getElementById('debug-box');
+    if (debugEl) {
+      const trafficKeys = Object.keys(user).filter(k =>
+        k.toLowerCase().includes('traffic') || k.toLowerCase().includes('used') || k.toLowerCase().includes('limit')
+      );
+      const debugLines = trafficKeys.map(k => `<b>${k}</b>: ${JSON.stringify(user[k])}`);
+      debugEl.innerHTML = '<div style="font-size:11px;color:#a09e9a;padding:10px 20px;background:#333;border-radius:10px;margin:0 20px 16px;word-break:break-all;line-height:1.8">'
+        + '🔍 Поля трафика от API:<br>' + (debugLines.length ? debugLines.join('<br>') : 'нет полей трафика') + '</div>';
+    }
+
     // ── ТРАФИК ──
-    // Remnawave API поля:
-    //   usedTrafficBytes         — трафик текущего периода (сбрасывается при продлении)
-    //   lifetimeUsedTrafficBytes — суммарный трафик за всё время (показывается в панели)
-    //   trafficLimitBytes        — лимит в байтах (0 = безлимит)
-    //
-    // ВАЖНО: Remnawave панель отображает lifetimeUsedTrafficBytes.
-    // Для совпадения с панелью используем сначала lifetimeUsedTrafficBytes,
-    // затем fallback на usedTrafficBytes если lifetime недоступен.
     const lifetimeRaw = user.lifetimeUsedTrafficBytes ?? user.lifetime_used_traffic ?? null;
     const usedRaw  = lifetimeRaw !== null
       ? lifetimeRaw
