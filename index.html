@@ -20,33 +20,30 @@
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 0 0 env(safe-area-inset-bottom, 24px); }
 
-    /* ─── LOGO ─── */
     .hero { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; padding: 44px 24px 24px; }
     .logo-wrap { position: relative; width: 160px; height: 160px; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; }
-    @keyframes float   { 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-8px) rotate(.4deg); } }
+    @keyframes float { 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-8px) rotate(.4deg); } }
     @keyframes glowPulse { 0%,100%{ opacity:.5; transform:scale(.95); } 50%{ opacity:1; transform:scale(1.05); } }
     .logo-floater { animation: float 5s ease-in-out infinite; filter: drop-shadow(0 16px 36px rgba(94,194,106,.28)) drop-shadow(0 4px 12px rgba(0,0,0,.7)); }
     .logo-bg-glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle at 50% 65%, rgba(94,194,106,.18) 0%, transparent 68%); animation: glowPulse 4s ease-in-out infinite; pointer-events: none; }
     .brand-name { font-size: 28px; font-weight: 300; letter-spacing: 5px; color: var(--text); margin-bottom: 6px; opacity: 0.92; }
     .greeting { font-size: 14px; color: var(--text2); margin-bottom: 28px; }
 
-    /* ─── STATUS ─── */
     .status-bar { width: 100%; max-width: 420px; padding: 0 20px; margin-bottom: 16px; }
     .status-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg3); border-radius: var(--radius-sm); padding: 12px 16px; }
     .status-left { display: flex; align-items: center; gap: 8px; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(94,194,106,0.15); flex-shrink: 0; }
     .status-dot.inactive { background: var(--text3); box-shadow: none; }
-    .status-dot.bad      { background: var(--red);   box-shadow: 0 0 0 3px rgba(224,92,92,0.15); }
+    .status-dot.bad { background: var(--red); box-shadow: 0 0 0 3px rgba(224,92,92,0.15); }
     .status-label { font-size: 13px; color: var(--text2); }
     .status-label b { color: var(--text); font-weight: 500; }
     .traffic { font-size: 13px; color: var(--text2); }
-    .traffic span { color: var(--text); font-weight: 500; }
     .expire { font-size: 11px; color: var(--text3); }
 
-    /* ─── ACTIONS ─── */
     .actions { width: 100%; max-width: 420px; padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
     .btn-primary { width: 100%; background: var(--accent); color: #1a1a1a; border: none; border-radius: var(--radius); padding: 17px 20px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s, transform 0.1s; }
     .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+    .btn-green { background: var(--green) !important; color: #0d2e12 !important; }
     .btn-secondary { width: 100%; background: var(--bg3); color: var(--text); border: none; border-radius: var(--radius); padding: 17px 20px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: background 0.15s, transform 0.1s; }
     .btn-secondary:active { background: var(--surface); transform: scale(0.98); }
     .btn-label { display: flex; align-items: center; gap: 10px; }
@@ -56,10 +53,9 @@
     .btn-half { flex: 1; background: var(--bg3); color: var(--text); border: none; border-radius: var(--radius); padding: 17px 16px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
     .btn-half:active { background: var(--surface); transform: scale(0.98); }
 
-    /* ─── MODALS ─── */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
     .modal-overlay.open { opacity: 1; pointer-events: all; }
-    .modal { background: var(--bg2); border-radius: 24px 24px 0 0; width: 100%; max-width: 420px; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateY(100%); transition: transform 0.3s cubic-bezier(.32,.72,0,1); }
+    .modal { background: var(--bg2); border-radius: 24px 24px 0 0; width: 100%; max-width: 420px; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateY(100%); transition: transform 0.3s cubic-bezier(.32,.72,0,1); max-height: 92vh; overflow-y: auto; }
     .modal-overlay.open .modal { transform: translateY(0); }
     .modal-handle { width: 36px; height: 4px; background: var(--surface2); border-radius: 2px; margin: 0 auto 20px; }
     .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
@@ -73,18 +69,17 @@
     .plan-period { font-size: 11px; color: var(--text2); text-align: right; }
     .badge { font-size: 10px; font-weight: 600; background: rgba(94,194,106,0.15); color: var(--green); padding: 3px 8px; border-radius: 100px; }
 
-    /* ─── PAYMENT INFO BOX ─── */
     .pay-info { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 14px; }
     .pay-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .pay-info-row:last-child { margin-bottom: 0; }
     .pay-info-label { font-size: 12px; color: var(--text3); }
-    .pay-info-val   { font-size: 13px; font-weight: 500; }
-    .pay-info-note  { font-size: 11px; color: var(--text3); margin-top: 10px; line-height: 1.5; }
+    .pay-info-val { font-size: 13px; font-weight: 500; }
+    .pay-info-note { font-size: 11px; color: var(--text3); margin-top: 10px; line-height: 1.5; }
 
     .profile-section { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; }
     .profile-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
     .profile-value { font-size: 14px; font-weight: 500; }
-    .profile-value.ok  { color: var(--green); }
+    .profile-value.ok { color: var(--green); }
     .profile-value.bad { color: var(--red); }
 
     .sub-key-box { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; }
@@ -103,23 +98,17 @@
     .support-title { font-size: 14px; font-weight: 500; }
     .support-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
 
-    .os-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .os-card { background: var(--bg3); border-radius: var(--radius-sm); padding: 16px 14px; cursor: pointer; text-align: center; border: 1.5px solid transparent; transition: border-color 0.15s; }
-    .os-card.selected { border-color: var(--accent); }
-    .os-name { font-size: 13px; font-weight: 500; margin-top: 8px; }
-    .os-emoji { font-size: 28px; }
-    .step-card { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 8px; display: flex; gap: 14px; align-items: flex-start; }
-    .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
-    .step-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
-    .step-text b { color: var(--text); font-weight: 500; }
-    .step-link { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--green); opacity: 0.8; text-decoration: none; border-bottom: 1px solid rgba(94,194,106,0.3); }
+    .connect-step { background: var(--bg3); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; }
+    .connect-step-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(94,194,106,0.15); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .connect-step-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+    .connect-step-text b { color: var(--text); font-weight: 500; }
 
     .toast { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface2); color: var(--text); padding: 10px 20px; border-radius: 100px; font-size: 13px; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; z-index: 200; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     .hero, .status-bar, .actions { animation: fadeUp 0.4s ease both; }
     .status-bar { animation-delay: 0.05s; }
-    .actions    { animation-delay: 0.1s; }
+    .actions { animation-delay: 0.1s; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
@@ -131,33 +120,12 @@
     <div class="logo-floater">
       <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="lLeft" x1="40" y1="40" x2="82" y2="148" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stop-color="#9de8a8"/>
-            <stop offset="100%" stop-color="#2a7a38"/>
-          </linearGradient>
-          <linearGradient id="lRight" x1="120" y1="40" x2="78" y2="148" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stop-color="#7dd48a"/>
-            <stop offset="100%" stop-color="#1a5a26"/>
-          </linearGradient>
-          <linearGradient id="lTop" x1="60" y1="28" x2="100" y2="28" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stop-color="#b8f0c0"/>
-            <stop offset="50%"  stop-color="#eafff0"/>
-            <stop offset="100%" stop-color="#b8f0c0"/>
-          </linearGradient>
-          <linearGradient id="lArch" x1="46" y1="138" x2="114" y2="138" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stop-color="#2e8c3e"/>
-            <stop offset="50%"  stop-color="#3aaa4e"/>
-            <stop offset="100%" stop-color="#2e8c3e"/>
-          </linearGradient>
-          <linearGradient id="lArchTop" x1="46" y1="118" x2="114" y2="118" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stop-color="#5ec26a"/>
-            <stop offset="50%"  stop-color="#90e89a"/>
-            <stop offset="100%" stop-color="#5ec26a"/>
-          </linearGradient>
-          <radialGradient id="lGlow" cx="50%" cy="62%" r="48%">
-            <stop offset="0%"   stop-color="#5ec26a" stop-opacity=".22"/>
-            <stop offset="100%" stop-color="#5ec26a" stop-opacity="0"/>
-          </radialGradient>
+          <linearGradient id="lLeft" x1="40" y1="40" x2="82" y2="148" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#9de8a8"/><stop offset="100%" stop-color="#2a7a38"/></linearGradient>
+          <linearGradient id="lRight" x1="120" y1="40" x2="78" y2="148" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#7dd48a"/><stop offset="100%" stop-color="#1a5a26"/></linearGradient>
+          <linearGradient id="lTop" x1="60" y1="28" x2="100" y2="28" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#b8f0c0"/><stop offset="50%" stop-color="#eafff0"/><stop offset="100%" stop-color="#b8f0c0"/></linearGradient>
+          <linearGradient id="lArch" x1="46" y1="138" x2="114" y2="138" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#2e8c3e"/><stop offset="50%" stop-color="#3aaa4e"/><stop offset="100%" stop-color="#2e8c3e"/></linearGradient>
+          <linearGradient id="lArchTop" x1="46" y1="118" x2="114" y2="118" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#5ec26a"/><stop offset="50%" stop-color="#90e89a"/><stop offset="100%" stop-color="#5ec26a"/></linearGradient>
+          <radialGradient id="lGlow" cx="50%" cy="62%" r="48%"><stop offset="0%" stop-color="#5ec26a" stop-opacity=".22"/><stop offset="100%" stop-color="#5ec26a" stop-opacity="0"/></radialGradient>
         </defs>
         <ellipse cx="80" cy="124" rx="70" ry="32" fill="url(#lGlow)"/>
         <path d="M 46 148 C 34 148, 28 141, 28 132 C 28 124, 34 117, 42 114 L 74 46 C 78 35, 84 30, 80 30 C 76 30, 82 35, 86 46 L 62 114 C 56 128, 50 140, 46 148 Z" fill="url(#lLeft)"/>
@@ -174,16 +142,16 @@
     </div>
   </div>
   <div class="brand-name">averra</div>
-  <div class="greeting" id="greeting">Привет, пользователь!</div>
+  <div class="greeting" id="greeting">Привет!</div>
 </div>
 
 <div class="status-bar">
   <div class="status-row">
     <div class="status-left">
-      <div class="status-dot" id="status-dot"></div>
+      <div class="status-dot inactive" id="status-dot"></div>
       <div>
         <div class="status-label"><b id="status-text">загрузка...</b></div>
-        <div class="traffic"><span id="traffic-val">—</span></div>
+        <div class="traffic" id="traffic-val">—</div>
       </div>
     </div>
     <div style="text-align:right">
@@ -192,62 +160,29 @@
   </div>
 </div>
 
-<div class="actions">
-  <button class="btn-primary" id="buy-btn">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <polyline points="2,10 8,4 14,10" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    Купить подписку от 150 ₽
-  </button>
-  <button class="btn-secondary" id="setup-btn">
-    <span class="btn-label">
-      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-      Установка и настройка
-    </span>
-    <span class="btn-platform" id="detected-os-label">—</span>
-  </button>
-  <div class="btn-row">
-    <button class="btn-half" id="profile-btn">
-      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-      Профиль
-    </button>
-    <button class="btn-half" id="support-btn">
-      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
-        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-      </svg>
-      Поддержка
-    </button>
-  </div>
-</div>
+<div class="actions" id="actions-block"></div>
 
 <div class="toast" id="toast"></div>
 
-<!-- ═══ BUY MODAL ═══ -->
+<!-- ═══ BUY / EXTEND MODAL ═══ -->
 <div class="modal-overlay" id="buy-modal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Выберите план</div>
+    <div class="modal-title" id="buy-modal-title">Выберите план</div>
 
-    <div class="plan-card selected" data-plan="1m" data-amount="150" data-label="1 месяц">
+    <div class="plan-card selected" data-plan="1m">
       <div><div class="plan-name">1 месяц</div><div class="plan-desc">Базовый тариф</div></div>
       <div><div class="plan-price">150 ₽</div><div class="plan-period">в месяц</div></div>
     </div>
-    <div class="plan-card" data-plan="3m" data-amount="380" data-label="3 месяца">
+    <div class="plan-card" data-plan="3m">
       <div><div class="plan-name" style="display:flex;align-items:center;gap:8px">3 месяца <span class="badge">−15%</span></div><div class="plan-desc">Удобный вариант</div></div>
       <div><div class="plan-price">380 ₽</div><div class="plan-period">127 ₽/мес</div></div>
     </div>
-    <div class="plan-card" data-plan="12m" data-amount="1080" data-label="12 месяцев">
+    <div class="plan-card" data-plan="12m">
       <div><div class="plan-name" style="display:flex;align-items:center;gap:8px">12 месяцев <span class="badge">−40%</span></div><div class="plan-desc">Лучшая цена</div></div>
       <div><div class="plan-price">1 080 ₽</div><div class="plan-period">90 ₽/мес</div></div>
     </div>
 
-    <!-- Итог перед оплатой -->
     <div class="pay-info">
       <div class="pay-info-row">
         <span class="pay-info-label">Сумма</span>
@@ -257,9 +192,7 @@
         <span class="pay-info-label">Способ оплаты</span>
         <span class="pay-info-val">ЮMoney</span>
       </div>
-      <div class="pay-info-note">
-        После оплаты подписка активируется автоматически — обычно в течение нескольких секунд.
-      </div>
+      <div class="pay-info-note">После оплаты подписка активируется автоматически — обычно в течение нескольких секунд.</div>
     </div>
 
     <button class="btn-primary" id="pay-btn">
@@ -270,6 +203,53 @@
       Оплатить через ЮMoney
     </button>
     <button class="close-btn" id="buy-close">Закрыть</button>
+  </div>
+</div>
+
+<!-- ═══ CONNECT MODAL ═══ -->
+<div class="modal-overlay" id="connect-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Подключение к VPN</div>
+
+    <div class="sub-key-box" style="margin-bottom:16px">
+      <div class="sub-key-label">Ссылка подписки</div>
+      <div class="sub-key-row">
+        <div class="sub-key-val" id="connect-url-val">—</div>
+        <button class="copy-btn" id="copy-connect-url">Копировать</button>
+      </div>
+    </div>
+
+    <div class="connect-step">
+      <div class="connect-step-num">1</div>
+      <div class="connect-step-text">Нажмите <b>«Открыть в happ»</b> — подписка добавится автоматически</div>
+    </div>
+    <div class="connect-step">
+      <div class="connect-step-num">2</div>
+      <div class="connect-step-text">Нажмите <b>«Подключиться»</b> в happ — готово!</div>
+    </div>
+    <div class="connect-step" style="margin-bottom:16px">
+      <div class="connect-step-num">?</div>
+      <div class="connect-step-text">Если happ не установлен — сначала нажмите <b>«Скачать happ»</b></div>
+    </div>
+
+    <button class="btn-primary btn-green" id="open-happ-btn" style="margin-bottom:10px">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="8" stroke="#0d2e12" stroke-width="1.8"/>
+        <path d="M7 10l2 2 4-4" stroke="#0d2e12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть в happ
+    </button>
+    <button class="btn-secondary" id="install-happ-btn" style="margin-bottom:4px">
+      <span class="btn-label">
+        <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2v10M6 8l4 4 4-4M3 14v2a2 2 0 002 2h10a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Скачать happ
+      </span>
+      <span id="connect-os-label" class="btn-platform">—</span>
+    </button>
+    <button class="close-btn" id="connect-close">Закрыть</button>
   </div>
 </div>
 
@@ -330,34 +310,55 @@
   </div>
 </div>
 
-<!-- ═══ SETUP MODAL ═══ -->
-<div class="modal-overlay" id="setup-modal">
-  <div class="modal" style="max-height:85vh;overflow-y:auto">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Установка и настройка</div>
-    <div class="os-grid">
-      <div class="os-card" data-os="windows" onclick="selectOS(this)"><div class="os-emoji">🪟</div><div class="os-name">Windows</div></div>
-      <div class="os-card" data-os="macos"   onclick="selectOS(this)"><div class="os-emoji">🍎</div><div class="os-name">macOS</div></div>
-      <div class="os-card" data-os="android" onclick="selectOS(this)"><div class="os-emoji">🤖</div><div class="os-name">Android</div></div>
-      <div class="os-card" data-os="ios"     onclick="selectOS(this)"><div class="os-emoji">📱</div><div class="os-name">iOS</div></div>
-    </div>
-    <div id="setup-steps"></div>
-    <button class="close-btn" id="setup-close">Закрыть</button>
-  </div>
-</div>
-
 <script>
 // ════════════════════════════════════════════
-//  CONFIG — вставьте номер кошелька ЮMoney
+//  CONFIG
 // ════════════════════════════════════════════
-const YOOMONEY_WALLET = '4100118505804569';  // ← например: '4100116XXXXXXXXX'
-
-// Планы: key → { amount, days, label }
+const YOOMONEY_WALLET = '4100118505804569';
 const PLANS_CONFIG = {
-  '1m':  { amount: 2,  days: 30,  label: '1 месяц'    },
-  '3m':  { amount: 380,  days: 90,  label: '3 месяца'   },
-  '12m': { amount: 1080, days: 365, label: '12 месяцев' },
+  '1m':  { amount: 150,  label: '1 месяц'    },
+  '3m':  { amount: 380,  label: '3 месяца'   },
+  '12m': { amount: 1080, label: '12 месяцев' },
 };
+const HAPP_LINKS = {
+  ios:     'https://apps.apple.com/app/happ-proxy-utility/id6504287215',
+  android: 'https://happ.su/download',
+  macos:   'https://happ.su/download',
+  windows: 'https://happ.su/download',
+};
+const OS_LABELS = { windows:'Windows', macos:'macOS', android:'Android', ios:'iOS' };
+const STATUS_RU = { ACTIVE:'активен', EXPIRED:'истёк', DISABLED:'отключён', LIMITED:'лимит трафика' };
+
+// ════════════════════════════════════════════
+//  TELEGRAM
+// ════════════════════════════════════════════
+const tg = window.Telegram && window.Telegram.WebApp;
+let tgUser = null;
+if (tg) {
+  tg.ready(); tg.expand();
+  tg.setHeaderColor     && tg.setHeaderColor('#2b2b2b');
+  tg.setBackgroundColor && tg.setBackgroundColor('#2b2b2b');
+  tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user;
+}
+if (tgUser) {
+  const name = tgUser.first_name || tgUser.username || 'пользователь';
+  document.getElementById('greeting').textContent = 'Привет, ' + name + '!';
+  document.getElementById('profile-name').textContent =
+    [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || '—';
+  document.getElementById('profile-id').textContent = tgUser.id || '—';
+}
+
+// ════════════════════════════════════════════
+//  DEVICE
+// ════════════════════════════════════════════
+function detectOS() {
+  const ua = navigator.userAgent || '';
+  if (/android/i.test(ua)) return 'android';
+  if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+  if (/Mac OS X/.test(ua) && !/Windows/.test(ua)) return 'macos';
+  return 'windows';
+}
+const detectedOS = detectOS();
 
 // ════════════════════════════════════════════
 //  API
@@ -371,50 +372,61 @@ async function proxyPost(path, body) {
   const r = await fetch('/api/proxy?path=' + encodeURIComponent(path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
 }
 
+function extractUser(d) {
+  if (!d) return null;
+  if (Array.isArray(d.response) && d.response[0]?.uuid) return d.response[0];
+  if (d.response?.uuid) return d.response;
+  if (d.uuid) return d;
+  if (Array.isArray(d.users) && d.users[0]?.uuid) return d.users[0];
+  return null;
+}
+
 async function findUser(tgId) {
   try {
     const d = await proxyGet('/api/users/by-telegram-id/' + tgId);
-    const u = d?.response ?? d;
-    if (u && (u.uuid || u.username)) return u;
+    const u = extractUser(d);
+    if (u) return u;
   } catch (_) {}
   try {
     const d = await proxyPost('/api/users/resolve', { telegramId: Number(tgId) });
-    const u = d?.response ?? d;
-    if (u && u.uuid) {
-      if (u.usedTrafficBytes === undefined || u.usedTrafficBytes === null) {
-        try {
-          const full = await proxyGet('/api/users/' + u.uuid);
-          const fu = full?.response ?? full;
-          if (fu && fu.uuid) return fu;
-        } catch (_) {}
-      }
-      return u;
-    }
+    const u = extractUser(d);
+    if (u) return u;
   } catch (_) {}
   try {
-    const d = await proxyGet('/api/users?size=250');
+    const d = await proxyGet('/api/users?size=500');
     const list = d?.response?.users ?? d?.users ?? [];
     const found = list.find(u =>
       String(u.telegramId) === String(tgId) ||
       String(u.tgId)       === String(tgId) ||
       String(u.telegram_id)=== String(tgId)
     );
-    if (found && found.uuid) {
-      try {
-        const full = await proxyGet('/api/users/' + found.uuid);
-        const fu = full?.response ?? full;
-        if (fu && fu.uuid) return fu;
-      } catch (_) {}
-      return found;
-    }
+    if (found?.uuid) return found;
   } catch (_) {}
   return null;
+}
+
+async function createUser(tgId, tgName) {
+  // Формируем допустимый username
+  const clean = (tgName || '').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').slice(0, 24).replace(/^_|_$/g, '');
+  const suffix = String(tgId).slice(-5);
+  const username = (clean.length >= 2 ? clean + '_' + suffix : 'user_' + suffix);
+
+  const expireAt = new Date().toISOString();
+  const d = await proxyPost('/api/users', {
+    username,
+    telegramId: Number(tgId),
+    expireAt,
+    status: 'EXPIRED',
+    trafficLimitBytes: 0,
+    trafficLimitStrategy: 'NO_RESET',
+  });
+  return extractUser(d);
 }
 
 // ════════════════════════════════════════════
@@ -423,10 +435,10 @@ async function findUser(tgId) {
 function fmtBytes(b) {
   b = Number(b);
   if (!b || isNaN(b) || b <= 0) return '—';
-  if (b < 1024)         return b.toFixed(0) + '\u00a0Б';
-  if (b < 1048576)      return (b / 1024).toFixed(1) + '\u00a0КБ';
-  if (b < 1073741824)   return (b / 1048576).toFixed(1) + '\u00a0МБ';
-  if (b < 1099511627776)return (b / 1073741824).toFixed(2) + '\u00a0ГБ';
+  if (b < 1024)          return b.toFixed(0) + '\u00a0Б';
+  if (b < 1048576)       return (b / 1024).toFixed(1) + '\u00a0КБ';
+  if (b < 1073741824)    return (b / 1048576).toFixed(1) + '\u00a0МБ';
+  if (b < 1099511627776) return (b / 1073741824).toFixed(2) + '\u00a0ГБ';
   return (b / 1099511627776).toFixed(2) + '\u00a0ТБ';
 }
 function fmtDate(iso) {
@@ -442,142 +454,22 @@ function showToast(msg) {
 }
 
 // ════════════════════════════════════════════
-//  YOOMONEY — формируем ссылку оплаты
+//  PAYMENT URL
 // ════════════════════════════════════════════
-/**
- * label формата: averra_<tgId>_<planKey>
- * Webhook.js разберёт его и продлит подписку нужному пользователю.
- */
 function buildPaymentUrl(tgId, planKey) {
   const plan = PLANS_CONFIG[planKey];
   if (!plan) return null;
-
-  const label = `averra_${tgId}_${planKey}`;
-
-  // Официальная форма перевода ЮMoney
   const params = new URLSearchParams({
-    receiver:     YOOMONEY_WALLET,
+    receiver:        YOOMONEY_WALLET,
     'quickpay-form': 'donate',
-    targets:      `Averra VPN — ${plan.label}`,
-    paymentType:  'AC',          // AC = банковская карта; PC = кошелёк ЮMoney
-    sum:          plan.amount,
-    label:        label,
-    successURL:   window.location.href, // вернуться в мини-апп после оплаты
+    targets:         'Averra VPN — ' + plan.label,
+    paymentType:     'AC',
+    sum:             plan.amount,
+    label:           'averra_' + tgId + '_' + planKey,
+    successURL:      window.location.href,
   });
-
-  return `https://yoomoney.ru/quickpay/confirm?${params.toString()}`;
+  return 'https://yoomoney.ru/quickpay/confirm?' + params.toString();
 }
-
-// ════════════════════════════════════════════
-//  DEVICE DETECTION
-// ════════════════════════════════════════════
-function detectOS() {
-  const ua = navigator.userAgent || '';
-  if (/android/i.test(ua))                        return 'android';
-  if (/iPad|iPhone|iPod/.test(ua))                return 'ios';
-  if (/Mac OS X/.test(ua) && !/Windows/.test(ua)) return 'macos';
-  return 'windows';
-}
-const OS_LABELS = { windows:'Windows', macos:'macOS', android:'Android', ios:'iOS' };
-const detectedOS = detectOS();
-document.getElementById('detected-os-label').textContent = OS_LABELS[detectedOS];
-
-// ════════════════════════════════════════════
-//  TELEGRAM
-// ════════════════════════════════════════════
-const tg = window.Telegram && window.Telegram.WebApp;
-let tgUser = null;
-if (tg) {
-  tg.ready(); tg.expand();
-  tg.setHeaderColor     && tg.setHeaderColor('#2b2b2b');
-  tg.setBackgroundColor && tg.setBackgroundColor('#2b2b2b');
-  tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user;
-}
-if (tgUser) {
-  const name = tgUser.first_name || tgUser.username || 'пользователь';
-  document.getElementById('greeting').textContent  = 'Привет, ' + name + '!';
-  document.getElementById('profile-name').textContent =
-    [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || '—';
-  document.getElementById('profile-id').textContent = tgUser.id || '—';
-}
-
-// ════════════════════════════════════════════
-//  LOAD USER DATA
-// ════════════════════════════════════════════
-const STATUS_RU = { ACTIVE:'активен', EXPIRED:'истёк', DISABLED:'отключён', LIMITED:'лимит трафика' };
-
-async function loadUserData() {
-  const dot  = document.getElementById('status-dot');
-  const stxt = document.getElementById('status-text');
-  const tval = document.getElementById('traffic-val');
-  const exp  = document.getElementById('expire-text');
-
-  if (!tgUser?.id) {
-    stxt.textContent = 'нет данных';
-    dot.classList.add('inactive');
-    exp.textContent = 'войдите через Telegram';
-    return;
-  }
-
-  try {
-    const user = await findUser(tgUser.id);
-    if (!user) {
-      stxt.textContent = 'не найден';
-      dot.classList.add('inactive');
-      exp.textContent = 'обратитесь в поддержку';
-      return;
-    }
-
-    const st       = user.status ?? 'UNKNOWN';
-    const isActive = st === 'ACTIVE';
-    dot.classList.toggle('bad',      !isActive && st !== 'UNKNOWN');
-    dot.classList.toggle('inactive', st === 'UNKNOWN');
-    stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
-
-    const ut = user.userTraffic ?? {};
-    const lifetimeRaw = ut.lifetimeUsedTrafficBytes ?? ut.lifetime_used_traffic
-                     ?? user.lifetimeUsedTrafficBytes ?? user.lifetime_used_traffic ?? null;
-    const usedRaw  = lifetimeRaw !== null
-      ? lifetimeRaw
-      : (ut.usedTrafficBytes ?? ut.usedTraffic ?? user.usedTrafficBytes ?? user.usedTraffic ?? user.used_traffic ?? null);
-    const limitRaw = user.trafficLimitBytes ?? user.trafficLimit ?? user.traffic_limit ?? null;
-
-    const used  = usedRaw  !== null ? Number(usedRaw)  : 0;
-    const limit = limitRaw !== null ? Number(limitRaw) : 0;
-
-    let tStr;
-    if (used > 0 && limit > 0)   tStr = fmtBytes(used) + ' / ' + fmtBytes(limit);
-    else if (used > 0)           tStr = 'использовано ' + fmtBytes(used);
-    else if (limit > 0)          tStr = '0\u00a0Б / ' + fmtBytes(limit);
-    else                         tStr = '—';
-    tval.textContent = tStr;
-
-    const expAt = user.expireAt ?? user.expiredAt ?? user.expire_at ?? null;
-    exp.textContent = expAt ? 'до\u00a0' + fmtDate(expAt) : '—';
-
-    const ps = document.getElementById('profile-status');
-    ps.textContent = STATUS_RU[st] ?? st;
-    ps.className   = 'profile-value ' + (isActive ? 'ok' : 'bad');
-    document.getElementById('profile-expire').textContent  = expAt ? fmtDate(expAt) : '—';
-    document.getElementById('profile-traffic').textContent = tStr;
-
-    const sub = user.subscriptionUrl ?? user.subUrl ?? user.sub_url
-             ?? user.subscriptionLink ?? user.subscribeUrl ?? null;
-    if (sub) {
-      document.getElementById('sub-key-box').style.display = '';
-      document.getElementById('sub-key-val').textContent   = sub;
-      document.getElementById('copy-sub-key').onclick = () =>
-        navigator.clipboard.writeText(sub).then(() => showToast('Ключ скопирован ✓'));
-    }
-  } catch (err) {
-    console.error('loadUserData:', err);
-    stxt.textContent = 'ошибка загрузки';
-    dot.classList.add('inactive');
-    exp.textContent  = 'попробуйте позже';
-  }
-}
-
-loadUserData();
 
 // ════════════════════════════════════════════
 //  MODALS
@@ -587,31 +479,18 @@ const closeModal = id => document.getElementById(id).classList.remove('open');
 document.querySelectorAll('.modal-overlay').forEach(el =>
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
 );
-
-document.getElementById('buy-btn').onclick       = () => openModal('buy-modal');
 document.getElementById('buy-close').onclick     = () => closeModal('buy-modal');
-document.getElementById('profile-btn').onclick   = () => openModal('profile-modal');
 document.getElementById('profile-close').onclick = () => closeModal('profile-modal');
-document.getElementById('support-btn').onclick   = () => openModal('support-modal');
 document.getElementById('support-close').onclick = () => closeModal('support-modal');
-document.getElementById('setup-close').onclick   = () => closeModal('setup-modal');
-
-document.getElementById('setup-btn').onclick = () => {
-  openModal('setup-modal');
-  const card = document.querySelector('.os-card[data-os="' + detectedOS + '"]');
-  if (card) selectOS(card);
-};
+document.getElementById('connect-close').onclick = () => closeModal('connect-modal');
 
 // ════════════════════════════════════════════
 //  PLAN SELECTION
 // ════════════════════════════════════════════
 let selectedPlan = '1m';
-
 function updatePaySummary() {
-  const plan = PLANS_CONFIG[selectedPlan];
-  document.getElementById('pay-summary-amount').textContent = plan.amount + ' ₽';
+  document.getElementById('pay-summary-amount').textContent = PLANS_CONFIG[selectedPlan].amount + ' ₽';
 }
-
 document.querySelectorAll('.plan-card').forEach(card => {
   card.addEventListener('click', () => {
     document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
@@ -620,89 +499,196 @@ document.querySelectorAll('.plan-card').forEach(card => {
     updatePaySummary();
   });
 });
-
-// ════════════════════════════════════════════
-//  PAY BUTTON — редирект на ЮMoney
-// ════════════════════════════════════════════
 document.getElementById('pay-btn').onclick = () => {
-  if (!tgUser?.id) {
-    showToast('Откройте приложение через Telegram');
-    return;
-  }
-  if (!YOOMONEY_WALLET) {
-    showToast('Оплата временно недоступна');
-    console.error('YOOMONEY_WALLET не задан');
-    return;
-  }
-
+  if (!tgUser?.id) { showToast('Откройте через Telegram'); return; }
   const url = buildPaymentUrl(tgUser.id, selectedPlan);
-  if (!url) return;
-
-  // В Telegram WebApp открываем внешнюю ссылку правильным способом
-  if (tg && tg.openLink) {
-    tg.openLink(url);
-  } else {
-    window.open(url, '_blank');
-  }
-
+  if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
   closeModal('buy-modal');
   showToast('Переходим к оплате…');
 };
 
 // ════════════════════════════════════════════
-//  SETUP INSTRUCTIONS
+//  CONNECT MODAL
 // ════════════════════════════════════════════
-const steps = {
-  windows: [
-    {n:1, text:'Скачайте <b>happ</b> для Windows', link:'https://happ.su/download', linkText:'happ.su/download'},
-    {n:2, text:'Установите приложение и откройте его'},
-    {n:3, text:'Нажмите <b>«Добавить конфигурацию»</b> или иконку <b>+</b>'},
-    {n:4, text:'Скопируйте ключ из раздела <b>«Профиль»</b> и вставьте его'},
-    {n:5, text:'Нажмите <b>«Подключиться»</b> — готово!'}
-  ],
-  macos: [
-    {n:1, text:'Установите <b>happ</b> с официального сайта', link:'https://happ.su/download', linkText:'happ.su/download'},
-    {n:2, text:'Запустите happ и нажмите <b>«+»</b>'},
-    {n:3, text:'Скопируйте ключ из раздела <b>«Профиль»</b> и вставьте его'},
-    {n:4, text:'Нажмите <b>«Подключиться»</b>'},
-    {n:5, text:'Разрешите добавление VPN-профиля — готово!'}
-  ],
-  android: [
-    {n:1, text:'Скачайте <b>happ</b> из Google Play или APK с сайта', link:'https://happ.su/download', linkText:'happ.su/download'},
-    {n:2, text:'Откройте приложение и нажмите <b>«+»</b> в правом углу'},
-    {n:3, text:'Выберите <b>«Добавить по ключу»</b>'},
-    {n:4, text:'Скопируйте ключ из раздела <b>«Профиль»</b> и вставьте его'},
-    {n:5, text:'Нажмите <b>«Подключить»</b> и разрешите VPN-соединение'}
-  ],
-  ios: [
-    {n:1, text:'Установите <b>happ</b> из App Store', link:'https://apps.apple.com/app/happ-proxy-utility/id6504287215', linkText:'Открыть App Store'},
-    {n:2, text:'Запустите happ и нажмите <b>«+»</b>'},
-    {n:3, text:'Выберите <b>«Добавить по ссылке»</b>'},
-    {n:4, text:'Скопируйте ключ из раздела <b>«Профиль»</b> и вставьте его'},
-    {n:5, text:'Нажмите <b>«Подключиться»</b> — iOS запросит разрешение, подтвердите'}
-  ]
-};
+function openConnectModal(subUrl) {
+  document.getElementById('connect-url-val').textContent = subUrl;
+  document.getElementById('connect-os-label').textContent = OS_LABELS[detectedOS];
 
-function renderSteps(os) {
-  document.getElementById('setup-steps').innerHTML = steps[os].map(s => {
-    const lnk = s.link
-      ? '<br><a class="step-link" href="' + s.link + '" target="_blank">' + s.linkText + '</a>'
-      : '';
-    return '<div class="step-card"><div class="step-num">' + s.n + '</div><div class="step-text">' + s.text + lnk + '</div></div>';
-  }).join('');
+  document.getElementById('copy-connect-url').onclick = () =>
+    navigator.clipboard.writeText(subUrl).then(() => showToast('Ссылка скопирована ✓'));
+
+  document.getElementById('open-happ-btn').onclick = () => {
+    // Deep link: happ открывает и добавляет подписку автоматически
+    const happUrl = 'happ://install?url=' + encodeURIComponent(subUrl);
+    if (tg && tg.openLink) tg.openLink(happUrl);
+    else window.location.href = happUrl;
+  };
+
+  document.getElementById('install-happ-btn').onclick = () => {
+    const link = HAPP_LINKS[detectedOS];
+    if (tg && tg.openLink) tg.openLink(link); else window.open(link, '_blank');
+  };
+
+  openModal('connect-modal');
 }
-renderSteps(detectedOS);
 
-function selectOS(el) {
-  document.querySelectorAll('.os-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  renderSteps(el.dataset.os);
+// ════════════════════════════════════════════
+//  RENDER ACTIONS
+// ════════════════════════════════════════════
+function renderButtons(user) {
+  const block = document.getElementById('actions-block');
+  block.innerHTML = '';
+
+  const st       = user?.status ?? 'NONE';
+  const isActive = st === 'ACTIVE';
+  const subUrl   = user
+    ? (user.subscriptionUrl ?? user.subUrl ?? user.sub_url ?? user.subscriptionLink ?? user.subscribeUrl ?? null)
+    : null;
+
+  // ── ПОДКЛЮЧИТЬ — только если активная подписка и есть ссылка ──
+  if (isActive && subUrl) {
+    const b = document.createElement('button');
+    b.className = 'btn-primary btn-green';
+    b.innerHTML = `<svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8" stroke="#0d2e12" stroke-width="1.8"/>
+      <path d="M7 10l2 2 4-4" stroke="#0d2e12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>Подключить`;
+    b.onclick = () => openConnectModal(subUrl);
+    block.appendChild(b);
+  }
+
+  // ── ПРОДЛИТЬ / КУПИТЬ ──
+  const b2 = document.createElement('button');
+  b2.className = 'btn-primary';
+  const buyLabel = (user && isActive) ? 'Продлить подписку' : 'Купить подписку от 150 ₽';
+  b2.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <polyline points="2,10 8,4 14,10" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>${buyLabel}`;
+  b2.onclick = () => {
+    document.getElementById('buy-modal-title').textContent =
+      (user && isActive) ? 'Продлить подписку' : 'Выберите план';
+    openModal('buy-modal');
+  };
+  block.appendChild(b2);
+
+  // ── ПРОФИЛЬ + ПОДДЕРЖКА ──
+  const row = document.createElement('div');
+  row.className = 'btn-row';
+  row.innerHTML = `
+    <button class="btn-half" id="profile-btn">
+      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>Профиль
+    </button>
+    <button class="btn-half" id="support-btn">
+      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>Поддержка
+    </button>`;
+  block.appendChild(row);
+  document.getElementById('profile-btn').onclick = () => openModal('profile-modal');
+  document.getElementById('support-btn').onclick  = () => openModal('support-modal');
+}
+
+// ════════════════════════════════════════════
+//  LOAD USER DATA
+// ════════════════════════════════════════════
+async function loadUserData() {
+  const dot  = document.getElementById('status-dot');
+  const stxt = document.getElementById('status-text');
+  const tval = document.getElementById('traffic-val');
+  const exp  = document.getElementById('expire-text');
+
+  if (!tgUser?.id) {
+    stxt.textContent = 'нет данных';
+    exp.textContent  = 'войдите через Telegram';
+    renderButtons(null);
+    return;
+  }
+
+  try {
+    let user = await findUser(tgUser.id);
+
+    // ── Автосоздание ──
+    if (!user) {
+      stxt.textContent = 'создаём профиль…';
+      try {
+        const name = tgUser.username || tgUser.first_name || '';
+        user = await createUser(tgUser.id, name);
+        if (user) showToast('Добро пожаловать в averra! 👋');
+      } catch (e) {
+        console.error('createUser:', e);
+      }
+    }
+
+    if (!user) {
+      stxt.textContent = 'ошибка';
+      dot.classList.add('inactive');
+      exp.textContent  = 'обратитесь в поддержку';
+      renderButtons(null);
+      return;
+    }
+
+    // ── Статус ──
+    const st       = user.status ?? 'UNKNOWN';
+    const isActive = st === 'ACTIVE';
+    dot.classList.remove('inactive', 'bad');
+    if (!isActive) dot.classList.add(st === 'UNKNOWN' ? 'inactive' : 'bad');
+    stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
+
+    // ── Трафик ──
+    const ut = user.userTraffic ?? {};
+    const usedRaw  = ut.lifetimeUsedTrafficBytes ?? user.lifetimeUsedTrafficBytes
+                  ?? ut.usedTrafficBytes ?? user.usedTrafficBytes ?? null;
+    const limitRaw = user.trafficLimitBytes ?? null;
+    const used  = Number(usedRaw  ?? 0);
+    const limit = Number(limitRaw ?? 0);
+    let tStr = '—';
+    if (used > 0 && limit > 0)   tStr = fmtBytes(used) + ' / ' + fmtBytes(limit);
+    else if (used > 0)            tStr = 'использовано ' + fmtBytes(used);
+    else if (limit > 0)           tStr = '0\u00a0Б / ' + fmtBytes(limit);
+    tval.textContent = tStr;
+
+    // ── Дата ──
+    const expAt   = user.expireAt ?? user.expiredAt ?? null;
+    const expDate = expAt ? new Date(expAt) : null;
+    exp.textContent = expDate && expDate > new Date()
+      ? 'до\u00a0' + fmtDate(expAt)
+      : expDate ? 'истекла ' + fmtDate(expAt) : '—';
+
+    // ── Профиль модал ──
+    const ps = document.getElementById('profile-status');
+    ps.textContent = STATUS_RU[st] ?? st;
+    ps.className   = 'profile-value ' + (isActive ? 'ok' : 'bad');
+    document.getElementById('profile-expire').textContent  = expAt ? fmtDate(expAt) : '—';
+    document.getElementById('profile-traffic').textContent = tStr;
+
+    const subUrl = user.subscriptionUrl ?? user.subUrl ?? user.sub_url
+               ?? user.subscriptionLink ?? user.subscribeUrl ?? null;
+    if (subUrl) {
+      document.getElementById('sub-key-box').style.display = '';
+      document.getElementById('sub-key-val').textContent   = subUrl;
+      document.getElementById('copy-sub-key').onclick = () =>
+        navigator.clipboard.writeText(subUrl).then(() => showToast('Ключ скопирован ✓'));
+    }
+
+    renderButtons(user);
+
+  } catch (err) {
+    console.error('loadUserData:', err);
+    document.getElementById('status-text').textContent = 'ошибка загрузки';
+    document.getElementById('expire-text').textContent  = 'попробуйте позже';
+    renderButtons(null);
+  }
 }
 
 function openTg(h) {
   const url = 'https://t.me/' + h.replace('@', '');
   if (tg) tg.openLink(url); else window.open(url, '_blank');
 }
+
+loadUserData();
 </script>
 </body>
 </html>
