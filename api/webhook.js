@@ -81,8 +81,10 @@ async function panelGet(path) {
       'Cookie':        NGINX_COOKIE,
     },
   });
-  if (!r.ok) throw new Error(`Panel GET ${path} → ${r.status}`);
-  return r.json();
+  const text = await r.text();
+  console.log(`[panel GET ${path}] status=${r.status} body=${text.slice(0, 300)}`);
+  if (!r.ok) throw new Error(`Panel GET ${path} → ${r.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text);
 }
 
 async function panelPost(path, body) {
@@ -95,8 +97,10 @@ async function panelPost(path, body) {
     },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(`Panel POST ${path} → ${r.status}`);
-  return r.json();
+  const text = await r.text();
+  console.log(`[panel POST ${path}] status=${r.status} body=${text.slice(0, 300)}`);
+  if (!r.ok) throw new Error(`Panel POST ${path} → ${r.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text);
 }
 
 async function panelPatch(path, body) {
@@ -109,23 +113,64 @@ async function panelPatch(path, body) {
     },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(`Panel PATCH ${path} → ${r.status}`);
-  return r.json();
+  const text = await r.text();
+  console.log(`[panel PATCH ${path}] status=${r.status} body=${text.slice(0, 300)}`);
+  if (!r.ok) throw new Error(`Panel PATCH ${path} → ${r.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text);
+}
+
+/** Достать объект пользователя из любого формата ответа панели */
+function extractUser(d) {
+  if (!d) return null;
+  // { response: { uuid, ... } }
+  if (d.response?.uuid) return d.response;
+  // { response: [ { uuid, ... } ] }
+  if (Array.isArray(d.response) && d.response[0]?.uuid) return d.response[0];
+  // { uuid, ... }
+  if (d.uuid) return d;
+  // { users: [ { uuid, ... } ] }
+  if (Array.isArray(d.users) && d.users[0]?.uuid) return d.users[0];
+  return null;
 }
 
 /** Найти пользователя по Telegram ID */
 async function findUser(tgId) {
+  // 1. GET /api/users/by-telegram-id/:id
   try {
     const d = await panelGet(`/api/users/by-telegram-id/${tgId}`);
-    const u = d?.response ?? d;
-    if (u?.uuid) return u;
-  } catch (_) {}
+    const u = extractUser(d);
+    if (u) { console.log('[findUser] found via by-telegram-id:', u.uuid); return u; }
+    console.warn('[findUser] by-telegram-id returned no uuid, raw:', JSON.stringify(d).slice(0, 200));
+  } catch (e) {
+    console.warn('[findUser] by-telegram-id error:', e.message);
+  }
 
+  // 2. POST /api/users/resolve  { telegramId }
   try {
     const d = await panelPost('/api/users/resolve', { telegramId: Number(tgId) });
-    const u = d?.response ?? d;
-    if (u?.uuid) return u;
-  } catch (_) {}
+    const u = extractUser(d);
+    if (u) { console.log('[findUser] found via resolve:', u.uuid); return u; }
+    console.warn('[findUser] resolve returned no uuid, raw:', JSON.stringify(d).slice(0, 200));
+  } catch (e) {
+    console.warn('[findUser] resolve error:', e.message);
+  }
+
+  // 3. GET /api/users?size=500 и поиск по telegramId
+  try {
+    const d = await panelGet('/api/users?size=500');
+    const list = d?.response?.users ?? d?.users ?? d?.response ?? [];
+    if (Array.isArray(list)) {
+      const found = list.find(u =>
+        String(u.telegramId) === String(tgId) ||
+        String(u.tgId)       === String(tgId) ||
+        String(u.telegram_id)=== String(tgId)
+      );
+      if (found?.uuid) { console.log('[findUser] found via list scan:', found.uuid); return found; }
+      console.warn('[findUser] list scan: no match among', list.length, 'users');
+    }
+  } catch (e) {
+    console.warn('[findUser] list scan error:', e.message);
+  }
 
   return null;
 }
