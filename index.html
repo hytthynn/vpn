@@ -431,8 +431,8 @@ async function createUser(tgId, tgName) {
   // Добавляем пользователя в сквад после создания
   if (newUser?.uuid) {
     try {
-      await proxyPost('/api/users/' + newUser.uuid + '/squads', {
-        squadUuid: '7d1ffee0-6bdf-420f-80ca-f6f200345ccc',
+      await proxyPost('/api/internal-squads/7d1ffee0-6bdf-420f-80ca-f6f200345ccc/users', {
+        userUuids: [newUser.uuid],
       });
     } catch (e) {
       console.warn('squad assign failed:', e.message);
