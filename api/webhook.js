@@ -28,38 +28,48 @@ const CORS = {
 // ─── HELPERS ───────────────────────────────────────────────────────────────
 
 async function verifySign(params) {
-  const receivedHash = params.get('sha1_hash');
+  // ЮMoney шлёт разные поля в зависимости от типа платежа:
+  // p2p-incoming  -> sha1_hash
+  // card-incoming -> sign (SHA-1 тот же алгоритм, другое имя поля)
+  const receivedHash = params.get('sha1_hash') || params.get('sign');
+
   if (!receivedHash) {
-    console.warn('[sign] no sha1_hash. params:', JSON.stringify(Object.fromEntries(params)));
+    console.warn('[sign] no sha1_hash/sign in params:', JSON.stringify(Object.fromEntries(params)));
     return false;
   }
 
   if (!YOOMONEY_SECRET) {
-    console.error('[sign] YOOMONEY_SECRET is not set! Check env vars.');
+    console.error('[sign] YOOMONEY_SECRET env var is not set!');
     return false;
   }
+
+  // Официальный порядок полей по документации ЮMoney
+  // Для card-incoming operation_id приходит пустым — используем operation_label
+  const notifType = params.get('notification_type') ?? '';
+  const operationId = notifType === 'card-incoming'
+    ? (params.get('operation_label') ?? params.get('operation_id') ?? '')
+    : (params.get('operation_id') ?? '');
 
   const FIELDS = [
     'notification_type', 'operation_id', 'amount', 'currency',
     'datetime', 'sender', 'codepro', 'notification_secret', 'label',
   ];
-  const str = FIELDS.map(f =>
-    f === 'notification_secret' ? YOOMONEY_SECRET : (params.get(f) ?? '')
-  ).join('&');
+  const str = FIELDS.map(f => {
+    if (f === 'notification_secret') return YOOMONEY_SECRET;
+    if (f === 'operation_id') return operationId;
+    return params.get(f) ?? '';
+  }).join('&');
 
   const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(str));
   const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
   if (hex !== receivedHash) {
-    console.warn('[sign] MISMATCH');
-    console.warn('[sign] received :', receivedHash);
-    console.warn('[sign] computed :', hex);
-    console.warn('[sign] secret len:', YOOMONEY_SECRET.length);
-    console.warn('[sign] str (masked):', str.replace(YOOMONEY_SECRET, '***SECRET***'));
-    console.warn('[sign] all params  :', JSON.stringify(Object.fromEntries(params)));
+    console.warn('[sign] MISMATCH — received:', receivedHash, '| computed:', hex);
+    console.warn('[sign] secret len:', YOOMONEY_SECRET.length, '| str:', str.replace(YOOMONEY_SECRET, '***'));
     return false;
   }
 
+  console.log('[sign] OK, type:', params.get('notification_type'));
   return true;
 }
 
