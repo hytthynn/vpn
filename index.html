@@ -314,17 +314,13 @@
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Поддержка</div>
-    <div class="support-option" onclick="openTg('@averra_support')">
+    <div class="support-option" onclick="openTg('@hytthynn')">
       <div class="support-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V6z" stroke="#a09e9a" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
-      <div><div class="support-title">Написать в чат</div><div class="support-desc">Ответим в течение нескольких минут</div></div>
+      <div><div class="support-title">Написать в поддержку</div><div class="support-desc">Ответим в течение нескольких минут</div></div>
     </div>
-    <div class="support-option" onclick="openTg('@averra_channel')">
+    <div class="support-option" onclick="openUrl('https://t.me/averravpn')">
       <div class="support-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="#a09e9a" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
       <div><div class="support-title">Наш канал</div><div class="support-desc">Новости и обновления</div></div>
-    </div>
-    <div class="support-option" onclick="openTg('@averra_faq')">
-      <div class="support-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#a09e9a" stroke-width="1.5"/><path d="M10 14v-1M10 11c0-2 3-2 3-4a3 3 0 00-6 0" stroke="#a09e9a" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-      <div><div class="support-title">FAQ</div><div class="support-desc">Частые вопросы и инструкции</div></div>
     </div>
     <button class="close-btn" id="support-close">Закрыть</button>
   </div>
@@ -873,6 +869,9 @@ async function loadUserData() {
 function openTg(h) {
   const url = 'https://t.me/' + h.replace('@', '');
   if (tg) tg.openLink(url); else window.open(url, '_blank');
+}
+function openUrl(url) {
+  if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
 }
 
 // ════════════════════════════════════════════
