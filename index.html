@@ -426,7 +426,20 @@ async function createUser(tgId, tgName) {
     trafficLimitBytes: 0,
     trafficLimitStrategy: 'NO_RESET',
   });
-  return extractUser(d);
+  const newUser = extractUser(d);
+
+  // Добавляем пользователя в сквад после создания
+  if (newUser?.uuid) {
+    try {
+      await proxyPost('/api/users/' + newUser.uuid + '/squads', {
+        squadUuid: '7d1ffee0-6bdf-420f-80ca-f6f200345ccc',
+      });
+    } catch (e) {
+      console.warn('squad assign failed:', e.message);
+    }
+  }
+
+  return newUser;
 }
 
 // ════════════════════════════════════════════
@@ -553,7 +566,10 @@ function renderButtons(user) {
       <circle cx="10" cy="10" r="8" stroke="#0d2e12" stroke-width="1.8"/>
       <path d="M7 10l2 2 4-4" stroke="#0d2e12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>Подключить`;
-    b.onclick = () => openConnectModal(subUrl);
+    b.onclick = () => {
+      if (tg && tg.openLink) tg.openLink(subUrl);
+      else window.open(subUrl, '_blank');
+    };
     block.appendChild(b);
   }
 
