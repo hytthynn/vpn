@@ -388,6 +388,57 @@
   </div>
 </div>
 
+<!-- ═══ TERMS MODAL ═══ -->
+<div class="modal-overlay" id="terms-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Условия использования</div>
+
+    <div style="font-size:13px;color:var(--text2);line-height:1.7;overflow-y:auto;max-height:55vh;padding-right:4px;">
+
+      <p style="color:var(--text3);font-size:12px;margin-bottom:16px;">Используя AVERRA, вы автоматически соглашаетесь с этими условиями использования и обязуетесь не нарушать законодательство Российской Федерации или других государств.</p>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Сервис</div>
+        <p>VPN-сервис обеспечивает конфиденциальность личной информации путём шифрования и анонимизации метаданных пользователя, скрывая его IP-адрес. Эти адреса используют множество других пользователей, что не только обеспечивает конфиденциальность для каждого из них, но и затрудняет определение характера их деятельности. Мы не изменяем, не перенаправляем и не внедряемся в пользовательский трафик.</p>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Демо период</div>
+        <p>Всем пользователям доступен демо период в течение трёх дней с момента авторизации в боте.</p>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Подписка</div>
+        <p>Уведомление о том, что подписка закончится, приходит за один день до окончания подписки.</p>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Изменение стоимости</div>
+        <p>Мы оставляем за собой право изменять стоимость подписки.</p>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Политика возврата</div>
+        <p>Вы можете запросить возврат средств, если не смогли воспользоваться предоставленными услугами. Для запроса возврата свяжитесь с нашей службой поддержки. Мы рассмотрим ваш запрос в течение дня; срок исполнения зависит от вашего банка.</p>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Конфиденциальность</div>
+        <p>Мы полностью сохраняем вашу анонимность. Мы не собираем и не храним данные о вашей онлайн-активности и не передаём их третьим сторонам. Мы применяем передовые методы шифрования для защиты вашей информации.</p>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Отказ от ответственности</div>
+        <p>Мы оставляем за собой право изменять сервис, обновляя программное обеспечение или внося изменения в функции. Несмотря на наши усилия, сервис предоставляется на условиях «как есть» и «по мере доступности». Вы несёте единоличную ответственность за использование сервиса.</p>
+      </div>
+
+    </div>
+
+    <button class="close-btn" id="terms-close" style="margin-top:14px;">Закрыть</button>
+  </div>
+</div>
+
 <script>
 // ════════════════════════════════════════════
 //  CONFIG
@@ -897,13 +948,15 @@ document.getElementById('promo-apply-btn').onclick = async () => {
 // ════════════════════════════════════════════
 //  TERMS BUTTON (injected after actions)
 // ════════════════════════════════════════════
+document.getElementById('terms-close').onclick = () => closeModal('terms-modal');
+
 function injectTermsButton() {
   const existing = document.getElementById('terms-btn-wrap');
   if (existing) return;
   const wrap = document.createElement('div');
   wrap.id = 'terms-btn-wrap';
   wrap.className = 'bottom-spacer';
-  wrap.innerHTML = `<button class="btn-terms" onclick="openTerms()">
+  wrap.innerHTML = `<button class="btn-terms" onclick="openModal('terms-modal')">
     <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
       <rect x="2" y="1" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/>
       <path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -911,10 +964,6 @@ function injectTermsButton() {
     Пользовательское соглашение
   </button>`;
   document.body.appendChild(wrap);
-}
-function openTerms() {
-  const url = 'https://averra.vpn/terms'; // замените на реальный URL
-  if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
 }
 
 injectTermsButton();
