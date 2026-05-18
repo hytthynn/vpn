@@ -180,13 +180,14 @@ async function extendSubscription(user, days) {
   const uuid = user.uuid;
 
   // Определяем новую дату истечения
-  const now       = new Date();
+  const now           = new Date();
   const currentExpiry = user.expireAt ? new Date(user.expireAt) : null;
-  const base      = currentExpiry && currentExpiry > now ? currentExpiry : now;
-  const newExpiry = new Date(base.getTime() + days * 86400 * 1000).toISOString();
+  const base          = currentExpiry && currentExpiry > now ? currentExpiry : now;
+  const newExpiry     = new Date(base.getTime() + days * 86400 * 1000).toISOString();
 
-  // Remnawave: PATCH /api/users/:uuid  { expireAt, status }
-  await panelPatch(`/api/users/${uuid}`, {
+  // Remnawave API v2: PATCH /api/users — uuid передаётся в теле, не в URL
+  await panelPatch('/api/users', {
+    uuid:     uuid,
     expireAt: newExpiry,
     status:   'ACTIVE',
   });
