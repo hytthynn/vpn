@@ -435,12 +435,15 @@ async function createUser(tgId, tgName) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userUuids: [newUser.uuid],
-          squadUuids: ['7d1ffee0-6bdf-420f-80ca-f6f200345ccc'],
+          uuids: [newUser.uuid],
+          activeInternalSquads: ['7d1ffee0-6bdf-420f-80ca-f6f200345ccc'],
         }),
       });
       const squadText = await squadResp.text();
-      console.log('[squad] status=' + squadResp.status + ' body=' + squadText.slice(0, 300));
+      console.log('[squad] status=' + squadResp.status + ' body=' + squadText.slice(0, 500));
+      if (!squadResp.ok) {
+        showToast('Сквад: ' + squadResp.status + ' ' + squadText.slice(0, 80));
+      }
     } catch (e) {
       console.warn('[squad] error:', e.message);
     }
