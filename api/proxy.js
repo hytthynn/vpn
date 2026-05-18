@@ -1,8 +1,8 @@
 export const config = { runtime: 'edge' };
 
-const PANEL_URL    = 'https://panel.hexsad.ru';
-const API_TOKEN    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiMzllMGZlNDgtY2NlZS00Nzc1LWIwMzktYjhkZjM1ZjA4YTQ5IiwidXNlcm5hbWUiOm51bGwsInJvbGUiOiJBUEkiLCJpYXQiOjE3NzkwNTg0MDgsImV4cCI6MTA0MTg5NzIwMDh9._YPVQXC4Rq8dOqkBx7u1Q-enmFolGCjbhcGpuJPTgcA';
-const NGINX_COOKIE = 'iaKQrsnp=gCqXPowZ';
+const PANEL_URL    = process.env.PANEL_URL;
+const API_TOKEN    = process.env.API_TOKEN;
+const NGINX_COOKIE = process.env.NGINX_COOKIE;
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',

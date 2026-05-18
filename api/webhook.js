@@ -1,16 +1,16 @@
 export const config = { runtime: 'edge' };
 
 // ─── CONFIG ────────────────────────────────────────────────────────────────
-const PANEL_URL    = 'https://panel.hexsad.ru';
-const API_TOKEN    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiMzllMGZlNDgtY2NlZS00Nzc1LWIwMzktYjhkZjM1ZjA4YTQ5IiwidXNlcm5hbWUiOm51bGwsInJvbGUiOiJBUEkiLCJpYXQiOjE3NzkwNTg0MDgsImV4cCI6MTA0MTg5NzIwMDh9._YPVQXC4Rq8dOqkBx7u1Q-enmFolGCjbhcGpuJPTgcA';
-const NGINX_COOKIE = 'iaKQrsnp=gCqXPowZ';
+const PANEL_URL    = process.env.PANEL_URL;
+const API_TOKEN    = process.env.API_TOKEN;
+const NGINX_COOKIE = process.env.NGINX_COOKIE;
 
 // ⚠️  Скопируйте секрет из настроек HTTP-уведомлений вашего кошелька ЮMoney
 // https://yoomoney.ru/transfer/myservices/http-notification → «Показать секрет»
-const YOOMONEY_SECRET = 'ccRzWFtoDUTkuxPz8J3rUPJ8';
+const YOOMONEY_SECRET = process.env.YOOMONEY_SECRET;
 
 // Номер кошелька ЮMoney — для формирования ссылки оплаты
-export const WALLET_ID = '4100118505804569'; // ← вставьте номер кошелька (напр. '4100116XXXXXXXXX')
+export const WALLET_ID = process.env.WALLET_ID;
 
 // Планы: label → кол-во дней подписки
 const PLANS = {
