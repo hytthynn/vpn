@@ -16,72 +16,120 @@
       --text: #f0ede8; --text2: #a09e9a; --text3: #706e6b;
       --green: #5ec26a; --red: #e05c5c; --accent: #e8e4df;
       --radius: 16px; --radius-sm: 10px;
-      --gold1: #d4a96a; --gold2: #f0d49a; --gold3: #b8885a;
     }
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 0 0 env(safe-area-inset-bottom, 24px); }
 
+    /* ─── LOGO ─── */
     .hero { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; padding: 44px 24px 24px; }
 
     .logo-wrap {
       position: relative;
-      width: 110px; height: 110px;
-      margin-bottom: 28px;
+      width: 120px; height: 120px;
+      margin-bottom: 24px;
       display: flex; align-items: center; justify-content: center;
     }
-    .logo-glow {
-      position: absolute; inset: -8px;
+
+    /* Ambient glow behind the whole logo */
+    .logo-ambient {
+      position: absolute; inset: -20px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(212,169,106,0.18) 0%, transparent 70%);
-      animation: pulseGlow 3s ease-in-out infinite;
+      background: radial-gradient(circle at 50% 60%, rgba(94,194,106,0.12) 0%, rgba(94,194,106,0.04) 45%, transparent 70%);
+      animation: ambientPulse 4s ease-in-out infinite;
     }
-    @keyframes pulseGlow {
-      0%, 100% { opacity: 0.5; transform: scale(0.95); }
-      50%       { opacity: 1;   transform: scale(1.05); }
+    @keyframes ambientPulse {
+      0%,100% { opacity: 0.6; transform: scale(0.92); }
+      50%      { opacity: 1;   transform: scale(1.08); }
     }
-    .logo-circle {
+
+    /* Main disc */
+    .logo-disc {
       position: relative;
-      width: 100px; height: 100px;
+      width: 96px; height: 96px;
       border-radius: 50%;
-      background: conic-gradient(from 135deg, #1e1e1e 0%, #2e2e2e 40%, #3a3a3a 60%, #1e1e1e 100%);
+      /* Dark metallic background */
+      background:
+        radial-gradient(ellipse at 35% 25%, rgba(255,255,255,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse at 65% 75%, rgba(0,0,0,0.4) 0%, transparent 55%),
+        #1c1c1c;
       box-shadow:
-        0 0 0 1px rgba(212,169,106,0.35),
-        0 4px 24px rgba(0,0,0,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.08),
-        inset 0 -2px 8px rgba(0,0,0,0.4);
+        0 0 0 1px rgba(255,255,255,0.06),
+        0 0 0 2px rgba(0,0,0,0.5),
+        0 8px 32px rgba(0,0,0,0.6),
+        0 2px 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.1),
+        inset 0 -1px 0 rgba(0,0,0,0.6);
       display: flex; align-items: center; justify-content: center;
+      z-index: 2;
     }
-    .logo-orbit {
-      position: absolute; inset: -6px;
+
+    /* Spinning ring with green arc */
+    .logo-ring {
+      position: absolute;
+      inset: -8px;
       border-radius: 50%;
-      border: 1px solid rgba(212,169,106,0.25);
-      animation: spinOrbit 8s linear infinite;
+      background: conic-gradient(
+        from -60deg,
+        rgba(94,194,106,0.9) 0deg,
+        rgba(94,194,106,0.4) 80deg,
+        rgba(94,194,106,0.0) 140deg,
+        rgba(94,194,106,0.0) 300deg,
+        rgba(94,194,106,0.6) 360deg
+      );
+      -webkit-mask:
+        radial-gradient(farthest-side, transparent calc(100% - 2px), #fff calc(100% - 2px));
+      mask:
+        radial-gradient(farthest-side, transparent calc(100% - 2px), #fff calc(100% - 2px));
+      animation: ringSpIn 5s linear infinite;
+      filter: blur(0.3px);
     }
-    .logo-orbit::before {
+    @keyframes ringSpIn { to { transform: rotate(360deg); } }
+
+    /* Static thin border ring */
+    .logo-ring-base {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Green dot on ring */
+    .logo-dot {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      animation: ringSpIn 5s linear infinite;
+    }
+    .logo-dot::before {
       content: '';
       position: absolute;
-      top: -4px; left: 50%;
+      top: 3px; left: 50%;
       transform: translateX(-50%);
-      width: 8px; height: 8px;
+      width: 6px; height: 6px;
       border-radius: 50%;
-      background: radial-gradient(circle, #f0d49a 30%, #d4a96a 100%);
-      box-shadow: 0 0 8px rgba(212,169,106,0.9);
+      background: #5ec26a;
+      box-shadow: 0 0 10px rgba(94,194,106,0.9), 0 0 20px rgba(94,194,106,0.4);
     }
-    @keyframes spinOrbit { to { transform: rotate(360deg); } }
-    .logo-svg { width: 46px; height: 46px; position: relative; z-index: 2; }
 
+    /* Shield SVG icon */
+    .logo-icon { width: 48px; height: 48px; }
+
+    /* Brand name */
     .brand-name {
-      font-size: 30px;
+      font-size: 28px;
       font-weight: 300;
-      letter-spacing: 4px;
+      letter-spacing: 5px;
+      color: var(--text);
       margin-bottom: 6px;
-      background: linear-gradient(135deg, #f0d49a 0%, #d4a96a 50%, #b8885a 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      opacity: 0.92;
+    }
+    .brand-name span {
+      /* Subtle first letter highlight */
+      color: rgba(240,237,232,1);
     }
     .greeting { font-size: 14px; color: var(--text2); margin-bottom: 28px; }
 
+    /* ─── STATUS ─── */
     .status-bar { width: 100%; max-width: 420px; padding: 0 20px; margin-bottom: 16px; }
     .status-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg3); border-radius: var(--radius-sm); padding: 12px 16px; }
     .status-left { display: flex; align-items: center; gap: 8px; }
@@ -94,6 +142,7 @@
     .traffic span { color: var(--text); font-weight: 500; }
     .expire { font-size: 11px; color: var(--text3); }
 
+    /* ─── ACTIONS ─── */
     .actions { width: 100%; max-width: 420px; padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
     .btn-primary { width: 100%; background: var(--accent); color: #1a1a1a; border: none; border-radius: var(--radius); padding: 17px 20px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s, transform 0.1s; }
     .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
@@ -106,6 +155,7 @@
     .btn-half { flex: 1; background: var(--bg3); color: var(--text); border: none; border-radius: var(--radius); padding: 17px 16px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
     .btn-half:active { background: var(--surface); transform: scale(0.98); }
 
+    /* ─── MODALS ─── */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
     .modal-overlay.open { opacity: 1; pointer-events: all; }
     .modal { background: var(--bg2); border-radius: 24px 24px 0 0; width: 100%; max-width: 420px; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateY(100%); transition: transform 0.3s cubic-bezier(.32,.72,0,1); }
@@ -153,7 +203,7 @@
     .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
     .step-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
     .step-text b { color: var(--text); font-weight: 500; }
-    .step-link { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--gold1); text-decoration: none; border-bottom: 1px solid rgba(212,169,106,0.3); }
+    .step-link { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--green); opacity: 0.8; text-decoration: none; border-bottom: 1px solid rgba(94,194,106,0.3); }
 
     .toast { position: fixed; bottom: calc(32px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface2); color: var(--text); padding: 10px 20px; border-radius: 100px; font-size: 13px; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; z-index: 200; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -168,43 +218,50 @@
 
 <div class="hero">
   <div class="logo-wrap">
-    <div class="logo-glow"></div>
-    <div class="logo-circle">
-      <div class="logo-orbit"></div>
-      <svg class="logo-svg" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div class="logo-ambient"></div>
+    <div class="logo-ring-base"></div>
+    <div class="logo-ring"></div>
+    <div class="logo-dot"></div>
+    <div class="logo-disc">
+      <!-- Clean shield + signal waves icon, monochrome to fit dark palette -->
+      <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stop-color="#f0d49a"/>
-            <stop offset="55%"  stop-color="#d4a96a"/>
-            <stop offset="100%" stop-color="#b8885a"/>
+          <linearGradient id="shieldFill" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.04"/>
           </linearGradient>
-          <linearGradient id="g2" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stop-color="#f0d49a" stop-opacity="0.85"/>
-            <stop offset="100%" stop-color="#d4a96a" stop-opacity="0.35"/>
+          <linearGradient id="shieldStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#9a9895"/>
+            <stop offset="100%" stop-color="#5a5856"/>
           </linearGradient>
-          <filter id="sf" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1" result="b"/>
-            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
+          <linearGradient id="checkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6ed97a"/>
+            <stop offset="100%" stop-color="#4aad56"/>
+          </linearGradient>
         </defs>
-        <!-- Shield fill -->
-        <path d="M23 5 L38 10.5 L38 22 C38 31 30.5 38.5 23 42 C15.5 38.5 8 31 8 22 L8 10.5 Z"
-              fill="url(#g1)" opacity="0.12"/>
+
+        <!-- Shield body fill -->
+        <path d="M24 5L39 11V23C39 32 32 39.5 24 43C16 39.5 9 32 9 23V11Z"
+              fill="url(#shieldFill)"/>
+
         <!-- Shield outline -->
-        <path d="M23 5 L38 10.5 L38 22 C38 31 30.5 38.5 23 42 C15.5 38.5 8 31 8 22 L8 10.5 Z"
-              stroke="url(#g1)" stroke-width="1.6" fill="none" filter="url(#sf)"/>
-        <!-- Lock body -->
-        <rect x="16.5" y="22" width="13" height="10" rx="2.5"
-              fill="url(#g2)" stroke="url(#g1)" stroke-width="0.9"/>
-        <!-- Lock shackle -->
-        <path d="M19 22 L19 18.5 C19 16 20.8 14 23 14 C25.2 14 27 16 27 18.5 L27 22"
-              stroke="url(#g1)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-        <!-- Keyhole -->
-        <circle cx="23" cy="26.5" r="1.8" fill="url(#g1)" opacity="0.95"/>
-        <rect x="22.2" y="27.5" width="1.6" height="2.5" rx="0.8" fill="url(#g1)" opacity="0.7"/>
+        <path d="M24 5L39 11V23C39 32 32 39.5 24 43C16 39.5 9 32 9 23V11Z"
+              stroke="url(#shieldStroke)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+
+        <!-- Check mark - main element, green -->
+        <path d="M16 24L21.5 29.5L32 19"
+              stroke="url(#checkGrad)" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Small WiFi-like arc top right of shield (signal indicator) -->
+        <path d="M33 13.5C34.5 15 35.5 17 35.5 19.5"
+              stroke="#5ec26a" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+        <path d="M35.5 11.5C38 14 39.5 17.5 39.5 21.5"
+              stroke="#5ec26a" stroke-width="1.4" stroke-linecap="round" opacity="0.3"/>
       </svg>
     </div>
   </div>
+
   <div class="brand-name">averra</div>
   <div class="greeting" id="greeting">Привет, пользователь!</div>
 </div>
@@ -372,36 +429,71 @@ async function proxyPost(path, body) {
   return r.json();
 }
 
+// Получить полный объект пользователя по Telegram ID
+// Remnawave API: поля usedTrafficBytes и trafficLimitBytes в БАЙТАХ (number/integer)
+// Ответ оборачивается в { response: { ... } }
 async function findUser(tgId) {
+  // Метод 1: GET /api/users/by-telegram-id/:id  (Remnawave >= 2.x)
   try {
-    const d = await proxyPost('/api/users/resolve', { telegramId: Number(tgId) });
-    console.log('[averra] /resolve raw:', JSON.stringify(d));
+    const d = await proxyGet('/api/users/by-telegram-id/' + tgId);
     const u = d?.response ?? d;
     if (u && (u.uuid || u.username)) return u;
-  } catch (e) { console.log('[averra] /resolve error:', e); }
+  } catch (_) {}
+
+  // Метод 2: POST /api/users/resolve
+  try {
+    const d = await proxyPost('/api/users/resolve', { telegramId: Number(tgId) });
+    const u = d?.response ?? d;
+    if (u && u.uuid) {
+      // Если resolve вернул объект без трафика — дозапрашиваем полный профиль по uuid
+      if (u.uuid && (u.usedTrafficBytes === undefined || u.usedTrafficBytes === null)) {
+        try {
+          const full = await proxyGet('/api/users/' + u.uuid);
+          const fu = full?.response ?? full;
+          if (fu && fu.uuid) return fu;
+        } catch (_) {}
+      }
+      return u;
+    }
+  } catch (_) {}
+
+  // Метод 3: GET /api/users?size=250 — перебор списка
   try {
     const d = await proxyGet('/api/users?size=250');
-    console.log('[averra] /users keys:', Object.keys(d||{}));
     const list = d?.response?.users ?? d?.users ?? [];
     const found = list.find(u =>
       String(u.telegramId) === String(tgId) ||
       String(u.tgId)       === String(tgId) ||
       String(u.telegram_id)=== String(tgId)
     );
-    if (found) console.log('[averra] found user:', JSON.stringify(found));
-    return found || null;
-  } catch (e) { console.log('[averra] /users error:', e); }
+    if (found) {
+      // Дозапрашиваем полный профиль если есть uuid
+      if (found.uuid) {
+        try {
+          const full = await proxyGet('/api/users/' + found.uuid);
+          const fu = full?.response ?? full;
+          if (fu && fu.uuid) return fu;
+        } catch (_) {}
+      }
+      return found;
+    }
+  } catch (_) {}
+
   return null;
 }
 
 // ═══ UTILS ═══
+// Remnawave хранит трафик в байтах (usedTrafficBytes — тип number, trafficLimitBytes — integer)
 function fmtBytes(b) {
   b = Number(b);
-  if (!b || isNaN(b) || b < 0) return '—';
-  const u = ['Б','КБ','МБ','ГБ','ТБ'];
-  const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), 4);
-  return (b / Math.pow(1024, i)).toFixed(1) + '\u00a0' + u[i];
+  if (!b || isNaN(b) || b <= 0) return '—';
+  if (b < 1024) return b.toFixed(0) + '\u00a0Б';
+  if (b < 1048576) return (b / 1024).toFixed(1) + '\u00a0КБ';
+  if (b < 1073741824) return (b / 1048576).toFixed(1) + '\u00a0МБ';
+  if (b < 1099511627776) return (b / 1073741824).toFixed(2) + '\u00a0ГБ';
+  return (b / 1099511627776).toFixed(2) + '\u00a0ТБ';
 }
+
 function fmtDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -417,9 +509,9 @@ function showToast(msg) {
 // ═══ DEVICE DETECTION ═══
 function detectOS() {
   const ua = navigator.userAgent || '';
-  if (/android/i.test(ua))               return 'android';
-  if (/iPad|iPhone|iPod/.test(ua))       return 'ios';
-  if (/Mac OS X/.test(ua) && !/Win/.test(ua)) return 'macos';
+  if (/android/i.test(ua))                          return 'android';
+  if (/iPad|iPhone|iPod/.test(ua))                  return 'ios';
+  if (/Mac OS X/.test(ua) && !/Windows/.test(ua))   return 'macos';
   return 'windows';
 }
 const OS_LABELS = { windows:'Windows', macos:'macOS', android:'Android', ios:'iOS' };
@@ -431,7 +523,7 @@ const tg = window.Telegram && window.Telegram.WebApp;
 let tgUser = null;
 if (tg) {
   tg.ready(); tg.expand();
-  tg.setHeaderColor && tg.setHeaderColor('#2b2b2b');
+  tg.setHeaderColor    && tg.setHeaderColor('#2b2b2b');
   tg.setBackgroundColor && tg.setBackgroundColor('#2b2b2b');
   tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user;
 }
@@ -461,6 +553,7 @@ async function loadUserData() {
 
   try {
     const user = await findUser(tgUser.id);
+
     if (!user) {
       stxt.textContent = 'не найден';
       dot.classList.add('inactive');
@@ -468,56 +561,44 @@ async function loadUserData() {
       return;
     }
 
-    // DEBUG: показываем все поля пользователя в консоли
-    console.log('[averra] user object:', JSON.stringify(user, null, 2));
-
+    // Статус
     const st       = user.status ?? 'UNKNOWN';
     const isActive = st === 'ACTIVE';
     dot.classList.toggle('bad',      !isActive && st !== 'UNKNOWN');
     dot.classList.toggle('inactive', st === 'UNKNOWN');
     stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
 
-    // Трафик — перебираем все известные поля Remnawave
-    // В Remnawave значения хранятся в БАЙТАХ (большие числа типа 418_957_000_000)
-    const rawUsed  = user.usedTrafficBytes  ?? user.usedTraffic   ?? user.used_traffic
-                   ?? user.trafficUsed      ?? user.traffic_used  ?? null;
-    const rawLimit = user.trafficLimitBytes ?? user.trafficLimit  ?? user.traffic_limit
-                   ?? user.dataLimit        ?? user.data_limit    ?? null;
+    // ── ТРАФИК ──
+    // Официальные поля Remnawave API (из OpenAPI контракта):
+    //   usedTrafficBytes      — number  (байты, использованный трафик)
+    //   lifetimeUsedTrafficBytes — number (суммарный за всё время)
+    //   trafficLimitBytes     — integer (байты, лимит; 0 = безлимит)
+    const usedRaw  = user.usedTrafficBytes  ?? user.usedTraffic  ?? user.used_traffic  ?? null;
+    const limitRaw = user.trafficLimitBytes ?? user.trafficLimit ?? user.traffic_limit ?? null;
 
-    console.log('[averra] rawUsed:', rawUsed, 'rawLimit:', rawLimit);
-    console.log('[averra] all keys:', Object.keys(user));
-
-    // Авто-детекция единиц: если значение маленькое (< 1 048 576) — скорее всего МБ или ГБ,
-    // если большое — байты. Remnawave обычно отдаёт байты.
-    function normalizeToBytes(v) {
-      const n = Number(v);
-      if (!n || isNaN(n) || n < 0) return 0;
-      // Если меньше 1 МБ как байт-значение — возможно это уже ГБ
-      // Remnawave: 390 ГБ = ~418_957_000_000 байт (11+ цифр)
-      // Если пришло просто "390" — умножаем на 1 ГБ
-      if (n < 100000) return n * 1073741824; // трактуем как ГБ
-      return n; // байты
-    }
-
-    const used  = normalizeToBytes(rawUsed);
-    const limit = normalizeToBytes(rawLimit);
+    // Числа могут прийти как string из-за JSON — конвертируем
+    const used  = usedRaw  !== null ? Number(usedRaw)  : 0;
+    const limit = limitRaw !== null ? Number(limitRaw) : 0;
 
     let tStr;
-    if (used > 0 && limit > 0)  tStr = fmtBytes(used) + ' / ' + fmtBytes(limit);
-    else if (used > 0)          tStr = 'использовано ' + fmtBytes(used);
-    else if (limit > 0)         tStr = '0 / ' + fmtBytes(limit);
-    else                        tStr = 'нет данных о трафике';
+    if (used > 0 && limit > 0)   tStr = fmtBytes(used) + ' / ' + fmtBytes(limit);
+    else if (used > 0)           tStr = 'использовано ' + fmtBytes(used);
+    else if (limit > 0)          tStr = '0\u00a0Б / ' + fmtBytes(limit);
+    else                         tStr = '—';
     tval.textContent = tStr;
 
+    // Дата
     const expAt = user.expireAt ?? user.expiredAt ?? user.expire_at ?? null;
     exp.textContent = expAt ? 'до\u00a0' + fmtDate(expAt) : '—';
 
+    // Профиль
     const ps = document.getElementById('profile-status');
     ps.textContent = STATUS_RU[st] ?? st;
     ps.className   = 'profile-value ' + (isActive ? 'ok' : 'bad');
     document.getElementById('profile-expire').textContent  = expAt ? fmtDate(expAt) : '—';
     document.getElementById('profile-traffic').textContent = tStr;
 
+    // Ключ подписки
     const sub = user.subscriptionUrl ?? user.subUrl ?? user.sub_url
              ?? user.subscriptionLink ?? user.subscribeUrl ?? null;
     if (sub) {
@@ -526,6 +607,7 @@ async function loadUserData() {
       document.getElementById('copy-sub-key').onclick = () =>
         navigator.clipboard.writeText(sub).then(() => showToast('Ключ скопирован ✓'));
     }
+
   } catch (err) {
     console.error('loadUserData:', err);
     stxt.textContent = 'ошибка загрузки';
@@ -533,6 +615,7 @@ async function loadUserData() {
     exp.textContent  = 'попробуйте позже';
   }
 }
+
 loadUserData();
 
 // ═══ MODALS ═══
@@ -549,7 +632,6 @@ document.getElementById('support-btn').onclick   = () => openModal('support-moda
 document.getElementById('support-close').onclick = () => closeModal('support-modal');
 document.getElementById('setup-close').onclick   = () => closeModal('setup-modal');
 
-// Авто-определение ОС при открытии Setup
 document.getElementById('setup-btn').onclick = () => {
   openModal('setup-modal');
   const card = document.querySelector('.os-card[data-os="' + detectedOS + '"]');
@@ -598,13 +680,15 @@ const steps = {
     {n:2, text:'Запустите happ и нажмите <b>«+»</b>'},
     {n:3, text:'Выберите <b>«Добавить по ссылке»</b>'},
     {n:4, text:'Скопируйте ключ из раздела <b>«Профиль»</b> и вставьте его'},
-    {n:5, text:'Нажмите <b>«Подключиться»</b> — iOS запросит разрешение на VPN, подтвердите'}
+    {n:5, text:'Нажмите <b>«Подключиться»</b> — iOS запросит разрешение, подтвердите'}
   ]
 };
 
 function renderSteps(os) {
   document.getElementById('setup-steps').innerHTML = steps[os].map(s => {
-    const lnk = s.link ? '<br><a class="step-link" href="' + s.link + '" target="_blank">' + s.linkText + '</a>' : '';
+    const lnk = s.link
+      ? '<br><a class="step-link" href="' + s.link + '" target="_blank">' + s.linkText + '</a>'
+      : '';
     return '<div class="step-card"><div class="step-num">' + s.n + '</div><div class="step-text">' + s.text + lnk + '</div></div>';
   }).join('');
 }
