@@ -273,8 +273,6 @@
   </div>
 </div>
 
-<div id="debug-box"></div>
-
 <div class="actions">
   <button class="btn-primary" id="buy-btn">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -562,22 +560,14 @@ async function loadUserData() {
     dot.classList.toggle('inactive', st === 'UNKNOWN');
     stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
 
-    // ── ОТЛАДКА: показываем все поля пользователя ──
-    const debugEl = document.getElementById('debug-box');
-    if (debugEl) {
-      const trafficKeys = Object.keys(user).filter(k =>
-        k.toLowerCase().includes('traffic') || k.toLowerCase().includes('used') || k.toLowerCase().includes('limit')
-      );
-      const debugLines = trafficKeys.map(k => `<b>${k}</b>: ${JSON.stringify(user[k])}`);
-      debugEl.innerHTML = '<div style="font-size:11px;color:#a09e9a;padding:10px 20px;background:#333;border-radius:10px;margin:0 20px 16px;word-break:break-all;line-height:1.8">'
-        + '🔍 Поля трафика от API:<br>' + (debugLines.length ? debugLines.join('<br>') : 'нет полей трафика') + '</div>';
-    }
-
     // ── ТРАФИК ──
-    const lifetimeRaw = user.lifetimeUsedTrafficBytes ?? user.lifetime_used_traffic ?? null;
+    // В Remnawave трафик лежит внутри user.userTraffic { usedTrafficBytes, lifetimeUsedTrafficBytes }
+    const ut = user.userTraffic ?? {};
+    const lifetimeRaw = ut.lifetimeUsedTrafficBytes ?? ut.lifetime_used_traffic
+                     ?? user.lifetimeUsedTrafficBytes ?? user.lifetime_used_traffic ?? null;
     const usedRaw  = lifetimeRaw !== null
       ? lifetimeRaw
-      : (user.usedTrafficBytes ?? user.usedTraffic ?? user.used_traffic ?? null);
+      : (ut.usedTrafficBytes ?? ut.usedTraffic ?? user.usedTrafficBytes ?? user.usedTraffic ?? user.used_traffic ?? null);
     const limitRaw = user.trafficLimitBytes ?? user.trafficLimit ?? user.traffic_limit ?? null;
 
     // Числа могут прийти как string из-за JSON — конвертируем
