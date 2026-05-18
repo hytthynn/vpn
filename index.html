@@ -431,11 +431,25 @@ async function createUser(tgId, tgName) {
   // Добавляем пользователя в сквад после создания
   if (newUser?.uuid) {
     try {
-      await proxyPost('/api/internal-squads/7d1ffee0-6bdf-420f-80ca-f6f200345ccc/users', {
-        userUuids: [newUser.uuid],
+      const squadResp = await fetch('/api/proxy?path=' + encodeURIComponent('/api/internal-squads/7d1ffee0-6bdf-420f-80ca-f6f200345ccc/users'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userUuids: [newUser.uuid] }),
       });
+      const squadText = await squadResp.text();
+      console.log('[squad] status=' + squadResp.status + ' body=' + squadText.slice(0, 300));
+      if (!squadResp.ok) {
+        // Пробуем альтернативный формат
+        const squadResp2 = await fetch('/api/proxy?path=' + encodeURIComponent('/api/users/bulk/squads'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uuids: [newUser.uuid], squadUuids: ['7d1ffee0-6bdf-420f-80ca-f6f200345ccc'] }),
+        });
+        const squadText2 = await squadResp2.text();
+        console.log('[squad fallback] status=' + squadResp2.status + ' body=' + squadText2.slice(0, 300));
+      }
     } catch (e) {
-      console.warn('squad assign failed:', e.message);
+      console.warn('[squad] error:', e.message);
     }
   }
 
