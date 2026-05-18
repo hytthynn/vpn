@@ -110,6 +110,26 @@
     .status-bar { animation-delay: 0.05s; }
     .actions { animation-delay: 0.1s; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .btn-terms { width: 100%; background: transparent; color: var(--text3); border: none; border-radius: var(--radius); padding: 14px 20px; font-size: 12px; font-weight: 400; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: color 0.15s; margin-top: 4px; text-decoration: none; }
+    .btn-terms:active { color: var(--text2); }
+    .bottom-spacer { width: 100%; max-width: 420px; padding: 0 20px 8px; }
+
+    .modal-promo-input { width: 100%; background: var(--bg3); border: 1.5px solid var(--surface2); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 15px; font-family: inherit; color: var(--text); outline: none; transition: border-color 0.15s; margin-bottom: 12px; }
+    .modal-promo-input:focus { border-color: var(--accent); }
+    .modal-promo-input::placeholder { color: var(--text3); }
+    .promo-result { font-size: 13px; color: var(--green); text-align: center; min-height: 18px; margin-bottom: 8px; }
+    .promo-result.error { color: var(--red); }
+
+    .ref-stat-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .ref-stat { flex: 1; background: var(--bg3); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
+    .ref-stat-val { font-size: 22px; font-weight: 600; color: var(--text); }
+    .ref-stat-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
+    .ref-link-box { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; }
+    .ref-link-label { font-size: 11px; color: var(--text3); margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .ref-link-row { display: flex; align-items: center; gap: 8px; }
+    .ref-link-val { flex: 1; font-size: 12px; color: var(--text2); word-break: break-all; line-height: 1.4; }
+    .ref-desc { font-size: 13px; color: var(--text2); line-height: 1.6; background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -307,6 +327,64 @@
       <div><div class="support-title">FAQ</div><div class="support-desc">Частые вопросы и инструкции</div></div>
     </div>
     <button class="close-btn" id="support-close">Закрыть</button>
+  </div>
+</div>
+
+<!-- ═══ REFERRAL MODAL ═══ -->
+<div class="modal-overlay" id="referral-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Реферальная программа</div>
+
+    <div class="ref-stat-row">
+      <div class="ref-stat">
+        <div class="ref-stat-val" id="ref-count">0</div>
+        <div class="ref-stat-lbl">Приглашено</div>
+      </div>
+      <div class="ref-stat">
+        <div class="ref-stat-val" id="ref-bonus">0 дн</div>
+        <div class="ref-stat-lbl">Бонус всего</div>
+      </div>
+    </div>
+
+    <div class="ref-desc">
+      За каждого друга, который купит подписку по вашей ссылке, вы получаете <b style="color:var(--text)">+7 дней</b> бесплатного VPN. Без ограничений на количество!
+    </div>
+
+    <div class="ref-link-box">
+      <div class="ref-link-label">Ваша реферальная ссылка</div>
+      <div class="ref-link-row">
+        <div class="ref-link-val" id="ref-link-val">загрузка…</div>
+        <button class="copy-btn" id="copy-ref-link">Копировать</button>
+      </div>
+    </div>
+
+    <button class="btn-primary btn-green" id="share-ref-btn" style="margin-bottom:10px">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="#0d2e12" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+      Поделиться ссылкой
+    </button>
+    <button class="close-btn" id="referral-close">Закрыть</button>
+  </div>
+</div>
+
+<!-- ═══ PROMO MODAL ═══ -->
+<div class="modal-overlay" id="promo-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Промокод</div>
+
+    <input class="modal-promo-input" id="promo-input" type="text" placeholder="Введите промокод" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <div class="promo-result" id="promo-result"></div>
+
+    <button class="btn-primary" id="promo-apply-btn" style="margin-bottom:10px">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <polyline points="2,8 6,12 14,4" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Применить
+    </button>
+    <button class="close-btn" id="promo-close">Закрыть</button>
   </div>
 </div>
 
@@ -509,10 +587,12 @@ const closeModal = id => document.getElementById(id).classList.remove('open');
 document.querySelectorAll('.modal-overlay').forEach(el =>
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
 );
-document.getElementById('buy-close').onclick     = () => closeModal('buy-modal');
-document.getElementById('profile-close').onclick = () => closeModal('profile-modal');
-document.getElementById('support-close').onclick = () => closeModal('support-modal');
-document.getElementById('connect-close').onclick = () => closeModal('connect-modal');
+document.getElementById('buy-close').onclick      = () => closeModal('buy-modal');
+document.getElementById('profile-close').onclick  = () => closeModal('profile-modal');
+document.getElementById('support-close').onclick  = () => closeModal('support-modal');
+document.getElementById('connect-close').onclick  = () => closeModal('connect-modal');
+document.getElementById('referral-close').onclick = () => closeModal('referral-modal');
+document.getElementById('promo-close').onclick    = () => closeModal('promo-modal');
 
 // ════════════════════════════════════════════
 //  PLAN SELECTION
@@ -622,6 +702,29 @@ function renderButtons(user) {
   block.appendChild(row);
   document.getElementById('profile-btn').onclick = () => openModal('profile-modal');
   document.getElementById('support-btn').onclick  = () => openModal('support-modal');
+
+  // ── РЕФЕРАЛЬНАЯ + ПРОМОКОДЫ ──
+  const row2 = document.createElement('div');
+  row2.className = 'btn-row';
+  row2.innerHTML = `
+    <button class="btn-half" id="referral-btn">
+      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+        <circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="15" cy="5" r="2" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M1 17c0-2.761 2.686-5 6-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M11 14l2 2 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>Реф. программа
+    </button>
+    <button class="btn-half" id="promo-btn">
+      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+        <rect x="2" y="5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M6 5V4a2 2 0 014 0v1M14 5V4a2 2 0 00-4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M6 11h8M6 14h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>Промокод
+    </button>`;
+  block.appendChild(row2);
+  document.getElementById('referral-btn').onclick = () => openReferralModal();
+  document.getElementById('promo-btn').onclick    = () => openModal('promo-modal');
 }
 
 // ════════════════════════════════════════════
@@ -720,6 +823,101 @@ function openTg(h) {
   const url = 'https://t.me/' + h.replace('@', '');
   if (tg) tg.openLink(url); else window.open(url, '_blank');
 }
+
+// ════════════════════════════════════════════
+//  REFERRAL
+// ════════════════════════════════════════════
+function openReferralModal() {
+  const tgId = tgUser?.id;
+  const botName = 'averra_vpn_bot'; // замените на имя вашего бота
+  const refLink = tgId
+    ? 'https://t.me/' + botName + '?start=ref_' + tgId
+    : '—';
+
+  document.getElementById('ref-link-val').textContent = refLink;
+
+  // Статистика рефералов — заглушка, подключите к API при необходимости
+  document.getElementById('ref-count').textContent = '0';
+  document.getElementById('ref-bonus').textContent  = '0 дн';
+
+  document.getElementById('copy-ref-link').onclick = () =>
+    navigator.clipboard.writeText(refLink).then(() => showToast('Ссылка скопирована ✓'));
+
+  document.getElementById('share-ref-btn').onclick = () => {
+    const text = 'Попробуй averra VPN — быстро и надёжно! ' + refLink;
+    if (tg && tg.openTelegramLink) {
+      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(refLink) + '&text=' + encodeURIComponent('Попробуй averra VPN — быстро и надёжно!'));
+    } else if (navigator.share) {
+      navigator.share({ title: 'averra VPN', text, url: refLink }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text).then(() => showToast('Ссылка скопирована ✓'));
+    }
+  };
+
+  openModal('referral-modal');
+}
+
+// ════════════════════════════════════════════
+//  PROMO
+// ════════════════════════════════════════════
+document.getElementById('promo-input').addEventListener('input', () => {
+  document.getElementById('promo-result').textContent = '';
+  document.getElementById('promo-result').className   = 'promo-result';
+});
+
+document.getElementById('promo-apply-btn').onclick = async () => {
+  const code = document.getElementById('promo-input').value.trim().toUpperCase();
+  const res  = document.getElementById('promo-result');
+  if (!code) { res.textContent = 'Введите промокод'; res.className = 'promo-result error'; return; }
+  if (!tgUser?.id) { res.textContent = 'Откройте через Telegram'; res.className = 'promo-result error'; return; }
+
+  res.textContent = 'Проверяем…'; res.className = 'promo-result';
+  try {
+    const r = await fetch('/api/proxy?path=' + encodeURIComponent('/api/promo/apply'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, telegramId: tgUser.id }),
+    });
+    if (r.ok) {
+      res.textContent = '✓ Промокод применён!';
+      res.className   = 'promo-result';
+      document.getElementById('promo-input').value = '';
+      setTimeout(() => { closeModal('promo-modal'); loadUserData(); }, 1500);
+    } else {
+      const txt = await r.text().catch(() => '');
+      res.textContent = txt.includes('not found') || r.status === 404 ? 'Промокод не найден' : 'Промокод недействителен';
+      res.className = 'promo-result error';
+    }
+  } catch (_) {
+    res.textContent = 'Ошибка соединения';
+    res.className   = 'promo-result error';
+  }
+};
+
+// ════════════════════════════════════════════
+//  TERMS BUTTON (injected after actions)
+// ════════════════════════════════════════════
+function injectTermsButton() {
+  const existing = document.getElementById('terms-btn-wrap');
+  if (existing) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'terms-btn-wrap';
+  wrap.className = 'bottom-spacer';
+  wrap.innerHTML = `<button class="btn-terms" onclick="openTerms()">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="1" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/>
+      <path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+    Пользовательское соглашение
+  </button>`;
+  document.body.appendChild(wrap);
+}
+function openTerms() {
+  const url = 'https://averra.vpn/terms'; // замените на реальный URL
+  if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
+}
+
+injectTermsButton();
 
 loadUserData();
 </script>
