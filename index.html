@@ -127,10 +127,11 @@
     .support-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
 
     .os-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .os-card { background: var(--bg3); border-radius: var(--radius-sm); padding: 16px 14px; cursor: pointer; text-align: center; border: 1.5px solid transparent; transition: border-color 0.15s; }
-    .os-card.selected { border-color: var(--accent); }
-    .os-name { font-size: 13px; font-weight: 500; margin-top: 8px; }
-    .os-emoji { font-size: 28px; }
+    .os-card { background: var(--bg3); border-radius: var(--radius-sm); padding: 16px 14px; cursor: pointer; text-align: center; border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s; }
+    .os-card.selected { border-color: var(--green); background: rgba(94,194,106,0.06); }
+    .os-card.selected .os-icon { opacity: 1; }
+    .os-name { font-size: 13px; font-weight: 500; margin-top: 10px; }
+    .os-icon { width: 36px; height: 36px; margin: 0 auto; opacity: 0.65; transition: opacity 0.15s; }
     .step-card { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 8px; display: flex; gap: 14px; align-items: flex-start; }
     .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
     .step-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
@@ -394,10 +395,51 @@
     <div class="modal-handle"></div>
     <div class="modal-title">Установка и настройка</div>
     <div class="os-grid">
-      <div class="os-card" data-os="windows" onclick="selectOS(this)"><div class="os-emoji">🪟</div><div class="os-name">Windows</div></div>
-      <div class="os-card" data-os="macos"   onclick="selectOS(this)"><div class="os-emoji">🍎</div><div class="os-name">macOS</div></div>
-      <div class="os-card" data-os="android" onclick="selectOS(this)"><div class="os-emoji">🤖</div><div class="os-name">Android</div></div>
-      <div class="os-card" data-os="ios"     onclick="selectOS(this)"><div class="os-emoji">📱</div><div class="os-name">iOS</div></div>
+      <div class="os-card selected" data-os="windows" onclick="selectOS(this)">
+        <div class="os-icon">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="13.5" height="13.5" rx="1.5" fill="#f0ede8"/>
+            <rect x="19.5" y="3" width="13.5" height="13.5" rx="1.5" fill="#f0ede8"/>
+            <rect x="3" y="19.5" width="13.5" height="13.5" rx="1.5" fill="#f0ede8"/>
+            <rect x="19.5" y="19.5" width="13.5" height="13.5" rx="1.5" fill="#f0ede8"/>
+          </svg>
+        </div>
+        <div class="os-name">Windows</div>
+      </div>
+      <div class="os-card" data-os="macos" onclick="selectOS(this)">
+        <div class="os-icon">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 5C22 5 23 2.5 26 2C26 2 26.5 5 23.5 6.5C23.5 6.5 21.5 7 22 5Z" fill="#f0ede8"/>
+            <path d="M23 8C25.5 8 28 9.5 29.5 9.5C31 9.5 32 9 32 9C32 9 30.5 11 28 11C27 11 25.5 10.5 24 10.5C22 10.5 20 12 18.5 12C17 12 15 10.5 13 10.5C11.5 10.5 10 11 9 11C6.5 11 5 9 5 9C5 9 6 9.5 7.5 9.5C9 9.5 11.5 8 14 8C15.5 8 17 9 18.5 9C20 9 21.5 8 23 8Z" fill="#f0ede8"/>
+            <path d="M9 11C7 13.5 6 17 6 20C6 26 10 34 14 34C15.5 34 16.5 33 18.5 33C20.5 33 21.5 34 23 34C27 34 31 26 31 20C31 17 30 13.5 28 11C27 12.5 24.5 13.5 22.5 13.5C20.5 13.5 19.5 12.5 18.5 12.5C17.5 12.5 16 13.5 14 13.5C12 13.5 10 12.5 9 11Z" fill="#f0ede8"/>
+          </svg>
+        </div>
+        <div class="os-name">macOS</div>
+      </div>
+      <div class="os-card" data-os="android" onclick="selectOS(this)">
+        <div class="os-icon">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 15C8 11.134 12.477 8 18 8C23.523 8 28 11.134 28 15V27C28 28.105 27.105 29 26 29H10C8.895 29 8 28.105 8 27V15Z" fill="#f0ede8"/>
+            <circle cx="13.5" cy="14.5" r="1.5" fill="#3a3a3a"/>
+            <circle cx="22.5" cy="14.5" r="1.5" fill="#3a3a3a"/>
+            <path d="M5 17V22" stroke="#f0ede8" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M31 17V22" stroke="#f0ede8" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M13 32V29M23 32V29" stroke="#f0ede8" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M10 8L8 5M26 8L28 5" stroke="#f0ede8" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="os-name">Android</div>
+      </div>
+      <div class="os-card" data-os="ios" onclick="selectOS(this)">
+        <div class="os-icon">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 5C22 5 23 2.5 26 2C26 2 26.5 5 23.5 6.5C23.5 6.5 21.5 7 22 5Z" fill="#f0ede8"/>
+            <path d="M23 8C25.5 8 28 9.5 29.5 9.5C31 9.5 32 9 32 9C32 9 30.5 11 28 11C27 11 25.5 10.5 24 10.5C22 10.5 20 12 18.5 12C17 12 15 10.5 13 10.5C11.5 10.5 10 11 9 11C6.5 11 5 9 5 9C5 9 6 9.5 7.5 9.5C9 9.5 11.5 8 14 8C15.5 8 17 9 18.5 9C20 9 21.5 8 23 8Z" fill="#f0ede8"/>
+            <path d="M9 11C7 13.5 6 17 6 20C6 26 10 34 14 34C15.5 34 16.5 33 18.5 33C20.5 33 21.5 34 23 34C27 34 31 26 31 20C31 17 30 13.5 28 11C27 12.5 24.5 13.5 22.5 13.5C20.5 13.5 19.5 12.5 18.5 12.5C17.5 12.5 16 13.5 14 13.5C12 13.5 10 12.5 9 11Z" fill="#f0ede8"/>
+          </svg>
+        </div>
+        <div class="os-name">iOS</div>
+      </div>
     </div>
     <div id="setup-steps"></div>
     <button class="close-btn" id="setup-close">Закрыть</button>
