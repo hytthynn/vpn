@@ -27,14 +27,22 @@ const CORS = {
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────
 
+/**
+ * Новый алгоритм подписи ЮMoney (с 18 мая 2026):
+ * sign = HMAC-SHA256(secretKey, sortedUrlEncodedParams)
+ *
+ * Шаги:
+ * 1. Берём все параметры кроме sign
+ * 2. Сортируем по алфавиту
+ * 3. URL-кодируем значения (RFC 3986)
+ * 4. Объединяем в строку key=value&key=value...
+ * 5. HMAC-SHA256 с секретным ключом → HEX
+ */
 async function verifySign(params) {
-  // ЮMoney шлёт разные поля в зависимости от типа платежа:
-  // p2p-incoming  -> sha1_hash
-  // card-incoming -> sign (SHA-1 тот же алгоритм, другое имя поля)
-  const receivedHash = params.get('sha1_hash') || params.get('sign');
+  const receivedSign = params.get('sign');
 
-  if (!receivedHash) {
-    console.warn('[sign] no sha1_hash/sign in params:', JSON.stringify(Object.fromEntries(params)));
+  if (!receivedSign) {
+    console.warn('[sign] no sign param. params:', JSON.stringify(Object.fromEntries(params)));
     return false;
   }
 
@@ -43,29 +51,30 @@ async function verifySign(params) {
     return false;
   }
 
-  // Официальный порядок полей по документации ЮMoney
-  // Для card-incoming operation_id приходит пустым — используем operation_label
-  const notifType = params.get('notification_type') ?? '';
-  const operationId = notifType === 'card-incoming'
-    ? (params.get('operation_label') ?? params.get('operation_id') ?? '')
-    : (params.get('operation_id') ?? '');
+  // Берём все параметры кроме sign, сортируем по алфавиту
+  const entries = [...params.entries()]
+    .filter(([k]) => k !== 'sign')
+    .sort(([a], [b]) => a.localeCompare(b));
 
-  const FIELDS = [
-    'notification_type', 'operation_id', 'amount', 'currency',
-    'datetime', 'sender', 'codepro', 'notification_secret', 'label',
-  ];
-  const str = FIELDS.map(f => {
-    if (f === 'notification_secret') return YOOMONEY_SECRET;
-    if (f === 'operation_id') return operationId;
-    return params.get(f) ?? '';
-  }).join('&');
+  // URL-кодируем значения (RFC 3986)
+  function rfc3986Encode(str) {
+    return encodeURIComponent(str).replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+  }
 
-  const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(str));
-  const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const strToSign = entries.map(([k, v]) => k + '=' + rfc3986Encode(v)).join('&');
 
-  if (hex !== receivedHash) {
-    console.warn('[sign] MISMATCH — received:', receivedHash, '| computed:', hex);
-    console.warn('[sign] secret len:', YOOMONEY_SECRET.length, '| str:', str.replace(YOOMONEY_SECRET, '***'));
+  // HMAC-SHA256
+  const keyData   = new TextEncoder().encode(YOOMONEY_SECRET);
+  const msgData   = new TextEncoder().encode(strToSign);
+  const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sigBuf    = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+  const computed  = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (computed !== receivedSign) {
+    console.warn('[sign] MISMATCH — received:', receivedSign);
+    console.warn('[sign] computed :', computed);
+    console.warn('[sign] secret len:', YOOMONEY_SECRET.length);
+    console.warn('[sign] strToSign:', strToSign.slice(0, 300));
     return false;
   }
 
