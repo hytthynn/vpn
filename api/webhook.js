@@ -29,36 +29,37 @@ const CORS = {
 // ─── HELPERS ───────────────────────────────────────────────────────────────
 
 /**
- * Проверяем подпись ЮMoney (HMAC-SHA256, актуально с 18.05.2026).
- * Параметры уведомления сортируются по алфавиту, URL-кодируются и
- * объединяются в строку key=value&key=value...
+ * Проверяем подпись ЮMoney (SHA-1).
+ * Официальный алгоритм: строка из фиксированных полей, разделённых '&',
+ * где вместо notification_secret подставляется секрет кошелька.
+ * Поля: notification_type&operation_id&amount&currency&datetime&sender&codepro&notification_secret&label
+ * Документация: https://yoomoney.ru/docs/payment-buttons/using-api/notifications
  */
 async function verifySign(params) {
-  const sign = params.get('sign');
-  if (!sign) return false;
+  const receivedHash = params.get('sha1_hash');
+  if (!receivedHash) return false;
 
-  // Собираем строку без параметра sign
-  const entries = [];
-  for (const [k, v] of params.entries()) {
-    if (k !== 'sign') entries.push([k, v]);
-  }
-  entries.sort(([a], [b]) => a.localeCompare(b));
+  // Фиксированный порядок полей согласно документации ЮMoney
+  const FIELDS = [
+    'notification_type',
+    'operation_id',
+    'amount',
+    'currency',
+    'datetime',
+    'sender',
+    'codepro',
+    'notification_secret', // заменяется на секрет
+    'label',
+  ];
 
-  const str = entries
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-    .join('&');
+  const str = FIELDS.map(f =>
+    f === 'notification_secret' ? YOOMONEY_SECRET : (params.get(f) ?? '')
+  ).join('&');
 
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(YOOMONEY_SECRET),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const buf  = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(str));
-  const hex  = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(str));
+  const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-  return hex === sign;
+  return hex === receivedHash;
 }
 
 /**
