@@ -14,9 +14,7 @@
       --bg: #2b2b2b; --bg2: #333333; --bg3: #3a3a3a;
       --surface: #3d3d3d; --surface2: #454545;
       --text: #f0ede8; --text2: #a09e9a; --text3: #706e6b;
-      --green: #5ec26a; --green-dim: #3a7a42;
-      --red: #e05c5c;
-      --accent: #e8e4df;
+      --green: #5ec26a; --red: #e05c5c; --accent: #e8e4df;
       --radius: 16px; --radius-sm: 10px;
     }
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
@@ -42,7 +40,7 @@
     .status-left { display: flex; align-items: center; gap: 8px; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(94,194,106,0.15); flex-shrink: 0; }
     .status-dot.inactive { background: var(--text3); box-shadow: none; }
-    .status-dot.expired  { background: var(--red); box-shadow: 0 0 0 3px rgba(224,92,92,0.15); }
+    .status-dot.bad      { background: var(--red);   box-shadow: 0 0 0 3px rgba(224,92,92,0.15); }
     .status-label { font-size: 13px; color: var(--text2); }
     .status-label b { color: var(--text); font-weight: 500; }
     .traffic { font-size: 13px; color: var(--text2); }
@@ -80,8 +78,8 @@
     .profile-section { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; }
     .profile-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
     .profile-value { font-size: 14px; font-weight: 500; }
-    .profile-value.active { color: var(--green); }
-    .profile-value.inactive { color: var(--red); }
+    .profile-value.ok  { color: var(--green); }
+    .profile-value.bad { color: var(--red); }
 
     .sub-key-box { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; }
     .sub-key-label { font-size: 11px; color: var(--text3); margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
@@ -114,7 +112,7 @@
 
     .hero, .status-bar, .actions { animation: fadeUp 0.4s ease both; }
     .status-bar { animation-delay: 0.05s; }
-    .actions { animation-delay: 0.1s; }
+    .actions    { animation-delay: 0.1s; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
@@ -290,64 +288,64 @@
 </div>
 
 <script>
-// ── CONFIG ──
-const PANEL_URL    = 'https://panel.hexsad.ru';
-const API_TOKEN    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiMzllMGZlNDgtY2NlZS00Nzc1LWIwMzktYjhkZjM1ZjA4YTQ5IiwidXNlcm5hbWUiOm51bGwsInJvbGUiOiJBUEkiLCJpYXQiOjE3NzkwNTg0MDgsImV4cCI6MTA0MTg5NzIwMDh9._YPVQXC4Rq8dOqkBx7u1Q-enmFolGCjbhcGpuJPTgcA';
-const NGINX_COOKIE = 'iaKQrsnp=gCqXPowZ';
-
-// ── API helper ──
-async function apiRequest(path, opts = {}) {
-  const res = await fetch(PANEL_URL + path, {
-    ...opts,
-    credentials: 'include',
-    headers: {
-      'Authorization': 'Bearer ' + API_TOKEN,
-      'Cookie': NGINX_COOKIE,
-      'Content-Type': 'application/json',
-      ...(opts.headers || {})
-    }
+// ═══════════════════════════════════
+//  API — всё через Vercel прокси
+// ═══════════════════════════════════
+async function proxyGet(path) {
+  const r = await fetch('/api/proxy?path=' + encodeURIComponent(path));
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+async function proxyPost(path, body) {
+  const r = await fetch('/api/proxy?path=' + encodeURIComponent(path), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
   });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return res.json();
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
 }
 
-async function getUserByTelegramId(tgId) {
-  // Try resolve endpoint first (Remnawave ≥2.5)
+// Найти пользователя по Telegram ID
+async function findUser(tgId) {
+  // 1. /api/users/resolve (Remnawave ≥ 2.5)
   try {
-    const d = await apiRequest('/api/users/resolve', {
-      method: 'POST',
-      body: JSON.stringify({ telegramId: Number(tgId) })
-    });
+    const d = await proxyPost('/api/users/resolve', { telegramId: Number(tgId) });
     const u = d?.response ?? d;
-    if (u && u.uuid) return u;
+    if (u && (u.uuid || u.username)) return u;
   } catch (_) {}
-  // Fallback: search by telegramId query param
+
+  // 2. GET /api/users с фильтром (postep fallback)
   try {
-    const d = await apiRequest('/api/users?telegramId=' + tgId);
+    const d = await proxyGet('/api/users?size=250');
     const list = d?.response?.users ?? d?.users ?? [];
-    return list.find(u => String(u.telegramId) === String(tgId)) ?? null;
+    const found = list.find(u =>
+      String(u.telegramId) === String(tgId) ||
+      String(u.tgId)       === String(tgId) ||
+      String(u.telegram_id)=== String(tgId)
+    );
+    if (found) return found;
   } catch (_) {}
+
   return null;
 }
 
-// ── Helpers ──
+// ═══════════════════════════════════
+//  УТИЛИТЫ
+// ═══════════════════════════════════
 function fmtBytes(b) {
-  if (b == null || b === '') return '—';
   b = Number(b);
-  if (isNaN(b) || b < 0) return '—';
-  if (b === 0) return '0 Б';
+  if (!b || isNaN(b) || b < 0) return '—';
   const u = ['Б','КБ','МБ','ГБ','ТБ'];
   const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), 4);
-  return (b / Math.pow(1024, i)).toFixed(1) + ' ' + u[i];
+  return (b / Math.pow(1024, i)).toFixed(1) + '\u00a0' + u[i];
 }
-
 function fmtDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (isNaN(d)) return '—';
   return d.toLocaleString('ru-RU', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
-
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -355,16 +353,17 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-// ── Telegram init ──
+// ═══════════════════════════════════
+//  TELEGRAM INIT
+// ═══════════════════════════════════
 const tg = window.Telegram && window.Telegram.WebApp;
 let tgUser = null;
 if (tg) {
   tg.ready(); tg.expand();
-  tg.setHeaderColor('#2b2b2b');
-  tg.setBackgroundColor('#2b2b2b');
+  tg.setHeaderColor && tg.setHeaderColor('#2b2b2b');
+  tg.setBackgroundColor && tg.setBackgroundColor('#2b2b2b');
   tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user;
 }
-
 if (tgUser) {
   const name = tgUser.first_name || tgUser.username || 'пользователь';
   document.getElementById('greeting').textContent = 'Привет, ' + name + '!';
@@ -373,7 +372,11 @@ if (tgUser) {
   document.getElementById('profile-id').textContent = tgUser.id || '—';
 }
 
-// ── Load Remnawave data ──
+// ═══════════════════════════════════
+//  ЗАГРУЗКА ДАННЫХ ИЗ REMNAWAVE
+// ═══════════════════════════════════
+const STATUS_RU = { ACTIVE:'активен', EXPIRED:'истёк', DISABLED:'отключён', LIMITED:'лимит трафика' };
+
 async function loadUserData() {
   const dot  = document.getElementById('status-dot');
   const stxt = document.getElementById('status-text');
@@ -383,66 +386,68 @@ async function loadUserData() {
   if (!tgUser?.id) {
     stxt.textContent = 'нет данных';
     dot.classList.add('inactive');
-    tval.textContent = '—';
     exp.textContent  = 'войдите через Telegram';
     return;
   }
 
   try {
-    const user = await getUserByTelegramId(tgUser.id);
+    const user = await findUser(tgUser.id);
+
     if (!user) {
       stxt.textContent = 'не найден';
       dot.classList.add('inactive');
-      exp.textContent = 'обратитесь в поддержку';
+      exp.textContent  = 'обратитесь в поддержку';
       return;
     }
 
-    // Status
-    const STATUS_MAP = { ACTIVE:'активен', EXPIRED:'истёк', DISABLED:'отключён', LIMITED:'лимит трафика' };
-    const isActive  = user.status === 'ACTIVE';
-    const isBad     = !isActive;
-    dot.classList.toggle('inactive', isBad && user.status !== 'EXPIRED');
-    dot.classList.toggle('expired',  user.status === 'EXPIRED' || user.status === 'DISABLED');
-    stxt.textContent = STATUS_MAP[user.status] ?? (user.status ?? '—').toLowerCase();
+    // Статус
+    const st       = user.status ?? 'UNKNOWN';
+    const isActive = st === 'ACTIVE';
+    dot.classList.toggle('bad',      !isActive);
+    dot.classList.toggle('inactive', st === 'UNKNOWN');
+    stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
 
-    // Traffic
+    // Трафик
     const used  = user.usedTrafficBytes  ?? user.usedTraffic  ?? 0;
     const limit = user.trafficLimitBytes ?? user.trafficLimit ?? 0;
-    const trafficStr = limit > 0 ? fmtBytes(used) + ' / ' + fmtBytes(limit) : fmtBytes(used);
-    tval.textContent = trafficStr;
+    const tStr  = limit > 0 ? fmtBytes(used) + ' / ' + fmtBytes(limit) : fmtBytes(used);
+    tval.textContent = tStr;
 
-    // Expire
+    // Дата
     const expAt = user.expireAt ?? user.expiredAt ?? user.expire_at ?? null;
-    exp.textContent = expAt ? 'до ' + fmtDate(expAt) : '—';
+    exp.textContent = expAt ? 'до\u00a0' + fmtDate(expAt) : '—';
 
-    // Profile modal
+    // Профиль
     const ps = document.getElementById('profile-status');
-    ps.textContent = STATUS_MAP[user.status] ?? (user.status ?? '—');
-    ps.className   = 'profile-value ' + (isActive ? 'active' : 'inactive');
+    ps.textContent = STATUS_RU[st] ?? st;
+    ps.className   = 'profile-value ' + (isActive ? 'ok' : 'bad');
     document.getElementById('profile-expire').textContent  = expAt ? fmtDate(expAt) : '—';
-    document.getElementById('profile-traffic').textContent = trafficStr;
+    document.getElementById('profile-traffic').textContent = tStr;
 
-    // Sub key / URL
-    const subUrl = user.subscriptionUrl ?? user.subUrl ?? user.sub_url ?? user.subscriptionLink ?? user.subscribeUrl ?? null;
-    if (subUrl) {
+    // Ключ подписки
+    const sub = user.subscriptionUrl ?? user.subUrl ?? user.sub_url
+             ?? user.subscriptionLink ?? user.subscribeUrl ?? null;
+    if (sub) {
       document.getElementById('sub-key-box').style.display = '';
-      document.getElementById('sub-key-val').textContent   = subUrl;
+      document.getElementById('sub-key-val').textContent   = sub;
       document.getElementById('copy-sub-key').onclick = () => {
-        navigator.clipboard.writeText(subUrl).then(() => showToast('Ключ скопирован ✓'));
+        navigator.clipboard.writeText(sub).then(() => showToast('Ключ скопирован ✓'));
       };
     }
 
   } catch (err) {
-    console.error('Remnawave API:', err);
+    console.error('loadUserData:', err);
     stxt.textContent = 'ошибка загрузки';
     dot.classList.add('inactive');
-    exp.textContent = 'попробуйте позже';
+    exp.textContent  = 'попробуйте позже';
   }
 }
 
 loadUserData();
 
-// ── Modals ──
+// ═══════════════════════════════════
+//  МОДАЛКИ
+// ═══════════════════════════════════
 const openModal  = id => document.getElementById(id).classList.add('open');
 const closeModal = id => document.getElementById(id).classList.remove('open');
 document.querySelectorAll('.modal-overlay').forEach(el =>
@@ -457,7 +462,9 @@ document.getElementById('support-close').onclick = () => closeModal('support-mod
 document.getElementById('setup-btn').onclick     = () => openModal('setup-modal');
 document.getElementById('setup-close').onclick   = () => closeModal('setup-modal');
 
-// ── Plan selection ──
+// ═══════════════════════════════════
+//  ПЛАНЫ
+// ═══════════════════════════════════
 let selectedPlan = '1';
 document.querySelectorAll('.plan-card').forEach(card => {
   card.addEventListener('click', () => {
@@ -471,36 +478,38 @@ document.getElementById('pay-btn').onclick = () => {
   closeModal('buy-modal');
 };
 
-// ── Setup steps ──
+// ═══════════════════════════════════
+//  ИНСТРУКЦИИ
+// ═══════════════════════════════════
 const steps = {
   windows: [
-    { n:1, text:'Скачайте <b>Outline Client</b> для Windows' },
-    { n:2, text:'Откройте приложение и нажмите <b>«Добавить сервер»</b>' },
-    { n:3, text:'Скопируйте ключ из раздела «Профиль» и вставьте его' },
-    { n:4, text:'Нажмите <b>«Подключиться»</b> — готово!' }
+    {n:1, text:'Скачайте <b>Outline Client</b> для Windows'},
+    {n:2, text:'Откройте приложение и нажмите <b>«Добавить сервер»</b>'},
+    {n:3, text:'Скопируйте ключ из раздела <b>«Профиль»</b> и вставьте его'},
+    {n:4, text:'Нажмите <b>«Подключиться»</b> — готово!'}
   ],
   macos: [
-    { n:1, text:'Установите <b>Outline Client</b> из Mac App Store' },
-    { n:2, text:'Откройте приложение и нажмите <b>«+»</b>' },
-    { n:3, text:'Вставьте ключ подключения из профиля' },
-    { n:4, text:'Нажмите <b>«Подключиться»</b>' }
+    {n:1, text:'Установите <b>Outline Client</b> из Mac App Store'},
+    {n:2, text:'Нажмите <b>«+»</b> и вставьте ключ из профиля'},
+    {n:3, text:'Нажмите <b>«Подключиться»</b>'},
+    {n:4, text:'Готово — VPN активен'}
   ],
   android: [
-    { n:1, text:'Скачайте <b>Outline</b> из Google Play или APK' },
-    { n:2, text:'Откройте приложение' },
-    { n:3, text:'Нажмите <b>«Добавить сервер»</b> и вставьте ключ' },
-    { n:4, text:'Коснитесь кнопки подключения' }
+    {n:1, text:'Скачайте <b>Outline</b> из Google Play или APK'},
+    {n:2, text:'Нажмите <b>«Добавить сервер»</b>'},
+    {n:3, text:'Вставьте ключ из раздела <b>«Профиль»</b>'},
+    {n:4, text:'Коснитесь кнопки подключения'}
   ],
   ios: [
-    { n:1, text:'Установите <b>Outline</b> из App Store' },
-    { n:2, text:'Откройте приложение и нажмите <b>«+»</b>' },
-    { n:3, text:'Вставьте ключ подключения' },
-    { n:4, text:'Подключитесь одним нажатием' }
+    {n:1, text:'Установите <b>Outline</b> из App Store'},
+    {n:2, text:'Нажмите <b>«+»</b>'},
+    {n:3, text:'Вставьте ключ из раздела <b>«Профиль»</b>'},
+    {n:4, text:'Подключитесь одним нажатием'}
   ]
 };
 function renderSteps(os) {
   document.getElementById('setup-steps').innerHTML = steps[os].map(s =>
-    '<div class="step-card"><div class="step-num">' + s.n + '</div><div class="step-text">' + s.text + '</div></div>'
+    '<div class="step-card"><div class="step-num">'+s.n+'</div><div class="step-text">'+s.text+'</div></div>'
   ).join('');
 }
 renderSteps('windows');
@@ -510,8 +519,8 @@ function selectOS(el) {
   renderSteps(el.dataset.os);
 }
 
-function openTg(handle) {
-  const url = 'https://t.me/' + handle.replace('@','');
+function openTg(h) {
+  const url = 'https://t.me/' + h.replace('@','');
   if (tg) tg.openLink(url); else window.open(url,'_blank');
 }
 </script>
