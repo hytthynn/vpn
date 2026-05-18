@@ -12,6 +12,7 @@ export default function handler(req) {
   }
   return new Response(JSON.stringify({
     defaultSquadUuid: process.env.DEFAULT_SQUAD_UUID ?? '',
+    botUsername:      process.env.BOT_USERNAME ?? '',
   }), {
     status: 200,
     headers: { ...CORS, 'Content-Type': 'application/json' },

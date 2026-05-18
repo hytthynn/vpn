@@ -461,6 +461,16 @@ const tg = window.Telegram && window.Telegram.WebApp;
 let tgUser = null;
 let DEFAULT_SQUAD_UUID = '';
 
+// Реферер: парсим startapp=ref_<tgId> из параметров запуска
+let REF_INVITER_ID = null;
+try {
+  const startParam = tg?.initDataUnsafe?.start_param || new URLSearchParams(location.search).get('startapp') || '';
+  if (startParam.startsWith('ref_')) {
+    REF_INVITER_ID = startParam.replace('ref_', '');
+    console.log('[ref] inviter tgId:', REF_INVITER_ID);
+  }
+} catch (_) {}
+
 // Загружаем конфиг из env (squad uuid и др.)
 fetch('/api/config').then(r => r.json()).then(cfg => {
   DEFAULT_SQUAD_UUID = cfg.defaultSquadUuid || '';
@@ -549,6 +559,9 @@ async function createUser(tgId, tgName) {
   const suffix = String(tgId).slice(-5);
   const username = (clean.length >= 2 ? clean + '_' + suffix : 'user_' + suffix);
 
+  // description: сохраняем ID реферера чтобы webhook мог начислить бонус
+  const description = REF_INVITER_ID ? 'ref:' + REF_INVITER_ID : '';
+
   const expireAt = new Date().toISOString();
   const d = await proxyPost('/api/users', {
     username,
@@ -557,6 +570,7 @@ async function createUser(tgId, tgName) {
     status: 'EXPIRED',
     trafficLimitBytes: 0,
     trafficLimitStrategy: 'NO_RESET',
+    ...(description ? { description } : {}),
   });
   const newUser = extractUser(d);
 
@@ -877,18 +891,29 @@ function openUrl(url) {
 // ════════════════════════════════════════════
 //  REFERRAL
 // ════════════════════════════════════════════
-function openReferralModal() {
+async function openReferralModal() {
   const tgId = tgUser?.id;
-  const botName = 'averra_vpn_bot'; // замените на имя вашего бота
   const refLink = tgId
-    ? 'https://t.me/' + botName + '?start=ref_' + tgId
+    ? 'https://t.me/averravpnbot/app?startapp=ref_' + tgId
     : '—';
 
   document.getElementById('ref-link-val').textContent = refLink;
+  document.getElementById('ref-count').textContent = '…';
+  document.getElementById('ref-bonus').textContent  = '…';
 
-  // Статистика рефералов — заглушка, подключите к API при необходимости
-  document.getElementById('ref-count').textContent = '0';
-  document.getElementById('ref-bonus').textContent  = '0 дн';
+  openModal('referral-modal');
+
+  // Загружаем статистику рефералов из Remnawave
+  if (tgId) {
+    try {
+      const stats = await loadRefStats(tgId);
+      document.getElementById('ref-count').textContent = stats.count;
+      document.getElementById('ref-bonus').textContent  = stats.bonusDays + ' дн';
+    } catch (e) {
+      document.getElementById('ref-count').textContent = '0';
+      document.getElementById('ref-bonus').textContent  = '0 дн';
+    }
+  }
 
   document.getElementById('copy-ref-link').onclick = () =>
     navigator.clipboard.writeText(refLink).then(() => showToast('Ссылка скопирована ✓'));
@@ -903,8 +928,34 @@ function openReferralModal() {
       navigator.clipboard.writeText(text).then(() => showToast('Ссылка скопирована ✓'));
     }
   };
+}
 
-  openModal('referral-modal');
+/**
+ * Считаем рефералов: ищем всех пользователей, у кого в description есть ref:<tgId>
+ * и суммируем бонусные дни из поля ref_bonus_days (если есть) или по кол-ву рефералов.
+ */
+async function loadRefStats(tgId) {
+  try {
+    const d = await proxyGet('/api/users?size=500');
+    const list = d?.response?.users ?? d?.users ?? d?.response ?? [];
+    if (!Array.isArray(list)) return { count: 0, bonusDays: 0 };
+
+    const marker = 'ref:' + tgId;
+    const refs = list.filter(u => (u.description || '').includes(marker));
+    const count = refs.length;
+
+    // Бонусные дни хранятся в description как ref_bonus:<days> (записываются webhook'ом)
+    // Суммируем накопленные дни по всем рефералам
+    let bonusDays = 0;
+    for (const u of refs) {
+      const m = (u.description || '').match(/ref_bonus:(\d+)/);
+      if (m) bonusDays += parseInt(m[1], 10);
+    }
+
+    return { count, bonusDays };
+  } catch (_) {
+    return { count: 0, bonusDays: 0 };
+  }
 }
 
 // ════════════════════════════════════════════
