@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>averra</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #2b2b2b;
+      --bg2: #333333;
+      --bg3: #3a3a3a;
+      --surface: #3d3d3d;
+      --surface2: #454545;
+      --text: #f0ede8;
+      --text2: #a09e9a;
+      --text3: #706e6b;
+      --green: #5ec26a;
+      --green-dim: #3a7a42;
+      --accent: #e8e4df;
+      --border: rgba(255,255,255,0.07);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Manrope', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 0 0 env(safe-area-inset-bottom, 24px);
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      justify-content: flex-end;
+      padding: 16px 20px 0;
+    }
+    .topbar-btn {
+      background: var(--surface);
+      border: none;
+      border-radius: 50px;
+      padding: 7px 14px;
+      color: var(--text2);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+    }
+    .topbar-btn:active { opacity: 0.7; }
+
+    /* ── Hero ── */
+    .hero {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 24px 24px;
+      gap: 0;
+    }
+
+    /* Logo ring */
+    .logo-wrap {
+      position: relative;
+      width: 104px;
+      height: 104px;
+      margin-bottom: 28px;
+    }
+    .logo-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--bg3);
+    }
+    .logo-ring-inner {
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-orbit {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.12);
+      animation: spin 6s linear infinite;
+    }
+    .logo-orbit::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text2);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      opacity: 0.85;
+    }
+
+    .brand-name {
+      font-size: 32px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .greeting {
+      font-size: 14px;
+      color: var(--text2);
+      font-weight: 400;
+      margin-bottom: 28px;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      width: 100%;
+      max-width: 420px;
+      padding: 0 20px;
+      margin-bottom: 16px;
+    }
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+    }
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(94,194,106,0.15);
+    }
+    .status-dot.inactive {
+      background: var(--text3);
+      box-shadow: none;
+    }
+    .status-label {
+      font-size: 13px;
+      color: var(--text2);
+    }
+    .status-label b { color: var(--text); font-weight: 500; }
+    .traffic {
+      font-size: 13px;
+      color: var(--text2);
+    }
+    .traffic span { color: var(--text); font-weight: 500; }
+    .expire {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    /* ── Buttons ── */
+    .actions {
+      width: 100%;
+      max-width: 420px;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: #1a1a1a;
+      border: none;
+      border-radius: var(--radius);
+      padding: 17px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 0.1px;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+
+    .btn-secondary {
+      width: 100%;
+      background: var(--bg3);
+      color: var(--text);
+      border: none;
+      border-radius: var(--radius);
+      padding: 17px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-secondary:active { background: var(--surface); transform: scale(0.98); }
+
+    .btn-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-icon {
+      width: 20px;
+      height: 20px;
+      opacity: 0.6;
+    }
+    .btn-platform {
+      font-size: 13px;
+      color: var(--text2);
+      font-weight: 400;
+    }
+
+    /* ── Row of two ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-half {
+      flex: 1;
+      background: var(--bg3);
+      color: var(--text);
+      border: none;
+      border-radius: var(--radius);
+      padding: 17px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-half:active { background: var(--surface); transform: scale(0.98); }
+
+    /* ── Plans modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal {
+      background: var(--bg2);
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 420px;
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(.32,.72,0,1);
+    }
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      margin: 0 auto 20px;
+    }
+    .modal-title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .plan-card {
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .plan-card.selected {
+      border-color: var(--accent);
+    }
+    .plan-card:last-child { margin-bottom: 20px; }
+    .plan-name { font-size: 14px; font-weight: 500; }
+    .plan-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .plan-price { font-size: 15px; font-weight: 600; }
+    .plan-period { font-size: 11px; color: var(--text2); text-align: right; }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(94,194,106,0.15);
+      color: var(--green);
+      padding: 3px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Profile modal ── */
+    .profile-section {
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .profile-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .profile-value { font-size: 14px; font-weight: 500; }
+
+    .close-btn {
+      width: 100%;
+      background: var(--surface);
+      color: var(--text2);
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .close-btn:active { opacity: 0.7; }
+
+    /* ── Support modal ── */
+    .support-option {
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .support-option:active { background: var(--surface); }
+    .support-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .support-title { font-size: 14px; font-weight: 500; }
+    .support-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+    /* ── Setup modal ── */
+    .os-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .os-card {
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 16px 14px;
+      cursor: pointer;
+      text-align: center;
+      border: 1.5px solid transparent;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .os-card:active { background: var(--surface); }
+    .os-card.selected { border-color: var(--accent); }
+    .os-name { font-size: 13px; font-weight: 500; margin-top: 8px; }
+    .os-emoji { font-size: 28px; }
+
+    .step-card {
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+    .step-text b { color: var(--text); font-weight: 500; }
+
+    /* entry animation */
+    .hero, .status-bar, .actions {
+      animation: fadeUp 0.4s ease both;
+    }
+    .status-bar { animation-delay: 0.05s; }
+    .actions { animation-delay: 0.1s; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <button class="topbar-btn" id="lang-btn">RU</button>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="logo-wrap">
+    <div class="logo-ring"></div>
+    <div class="logo-orbit"></div>
+    <div class="logo-ring-inner">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="10" stroke="#a09e9a" stroke-width="1.5" fill="none"/>
+        <circle cx="18" cy="18" r="4" fill="#a09e9a" opacity="0.7"/>
+        <circle cx="18" cy="8" r="2.5" fill="#c8c5c0"/>
+        <circle cx="28" cy="24" r="2" fill="#888682"/>
+        <circle cx="8" cy="24" r="2" fill="#888682"/>
+        <line x1="18" y1="10" x2="18" y2="14" stroke="#a09e9a" stroke-width="1.2"/>
+        <line x1="26.5" y1="23" x2="22" y2="20" stroke="#a09e9a" stroke-width="1.2"/>
+        <line x1="9.5" y1="23" x2="14" y2="20" stroke="#a09e9a" stroke-width="1.2"/>
+      </svg>
+    </div>
+  </div>
+  <div class="brand-name">averra</div>
+  <div class="greeting" id="greeting">Привет, пользователь!</div>
+</div>
+
+<!-- Status -->
+<div class="status-bar">
+  <div class="status-row">
+    <div class="status-left">
+      <div class="status-dot" id="status-dot"></div>
+      <div>
+        <div class="status-label"><b id="status-text">активен</b></div>
+        <div class="traffic"><span id="traffic-val">36.7</span> МБ</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="expire" id="expire-text">до 11 сентября 2025 08:57</div>
+    </div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="actions">
+  <!-- Buy subscription -->
+  <button class="btn-primary" id="buy-btn">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <polyline points="2,10 8,4 14,10" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Купить подписку от 150 ₽
+  </button>
+
+  <!-- Setup -->
+  <button class="btn-secondary" id="setup-btn">
+    <span class="btn-label">
+      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Установка и настройка
+    </span>
+    <span class="btn-platform">Windows</span>
+  </button>
+
+  <!-- Profile + Support -->
+  <div class="btn-row">
+    <button class="btn-half" id="profile-btn">
+      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Профиль
+    </button>
+    <button class="btn-half" id="support-btn">
+      <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      Поддержка
+    </button>
+  </div>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Buy modal -->
+<div class="modal-overlay" id="buy-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Выберите план</div>
+
+    <div class="plan-card selected" data-plan="1">
+      <div>
+        <div class="plan-name">1 месяц</div>
+        <div class="plan-desc">Базовый тариф</div>
+      </div>
+      <div>
+        <div class="plan-price">150 ₽</div>
+        <div class="plan-period">в месяц</div>
+      </div>
+    </div>
+
+    <div class="plan-card" data-plan="3">
+      <div>
+        <div class="plan-name" style="display:flex;align-items:center;gap:8px">3 месяца <span class="badge">−15%</span></div>
+        <div class="plan-desc">Удобный вариант</div>
+      </div>
+      <div>
+        <div class="plan-price">380 ₽</div>
+        <div class="plan-period">127 ₽/мес</div>
+      </div>
+    </div>
+
+    <div class="plan-card" data-plan="12">
+      <div>
+        <div class="plan-name" style="display:flex;align-items:center;gap:8px">12 месяцев <span class="badge">−40%</span></div>
+        <div class="plan-desc">Лучшая цена</div>
+      </div>
+      <div>
+        <div class="plan-price">1 080 ₽</div>
+        <div class="plan-period">90 ₽/мес</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="pay-btn">Оплатить</button>
+    <button class="close-btn" id="buy-close">Закрыть</button>
+  </div>
+</div>
+
+<!-- Profile modal -->
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Профиль</div>
+    <div class="profile-section">
+      <div class="profile-label">Имя пользователя</div>
+      <div class="profile-value" id="profile-name">—</div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-label">Telegram ID</div>
+      <div class="profile-value" id="profile-id">—</div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-label">Статус подписки</div>
+      <div class="profile-value" style="color:var(--green)">Активна</div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-label">Действует до</div>
+      <div class="profile-value">11 сентября 2025</div>
+    </div>
+    <button class="close-btn" id="profile-close">Закрыть</button>
+  </div>
+</div>
+
+<!-- Support modal -->
+<div class="modal-overlay" id="support-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Поддержка</div>
+
+    <div class="support-option" onclick="openTg('@averra_support')">
+      <div class="support-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V6z" stroke="#a09e9a" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="support-title">Написать в чат</div>
+        <div class="support-desc">Ответим в течение нескольких минут</div>
+      </div>
+    </div>
+
+    <div class="support-option" onclick="openTg('@averra_channel')">
+      <div class="support-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="#a09e9a" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="support-title">Наш канал</div>
+        <div class="support-desc">Новости и обновления</div>
+      </div>
+    </div>
+
+    <div class="support-option" onclick="openTg('@averra_faq')">
+      <div class="support-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="#a09e9a" stroke-width="1.5"/>
+          <path d="M10 14v-1M10 11c0-2 3-2 3-4a3 3 0 00-6 0" stroke="#a09e9a" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="support-title">FAQ</div>
+        <div class="support-desc">Частые вопросы и инструкции</div>
+      </div>
+    </div>
+
+    <button class="close-btn" id="support-close">Закрыть</button>
+  </div>
+</div>
+
+<!-- Setup modal -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Установка и настройка</div>
+
+    <div class="os-grid">
+      <div class="os-card selected" data-os="windows" onclick="selectOS(this)">
+        <div class="os-emoji">🪟</div>
+        <div class="os-name">Windows</div>
+      </div>
+      <div class="os-card" data-os="macos" onclick="selectOS(this)">
+        <div class="os-emoji">🍎</div>
+        <div class="os-name">macOS</div>
+      </div>
+      <div class="os-card" data-os="android" onclick="selectOS(this)">
+        <div class="os-emoji">🤖</div>
+        <div class="os-name">Android</div>
+      </div>
+      <div class="os-card" data-os="ios" onclick="selectOS(this)">
+        <div class="os-emoji">📱</div>
+        <div class="os-name">iOS</div>
+      </div>
+    </div>
+
+    <div id="setup-steps"></div>
+
+    <button class="close-btn" id="setup-close">Закрыть</button>
+  </div>
+</div>
+
+<script>
+  // ── Telegram WebApp init ──
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#2b2b2b');
+    tg.setBackgroundColor('#2b2b2b');
+
+    const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (user) {
+      const name = user.first_name || user.username || 'пользователь';
+      document.getElementById('greeting').textContent = `Привет, ${name}!`;
+      document.getElementById('profile-name').textContent =
+        [user.first_name, user.last_name].filter(Boolean).join(' ') || '—';
+      document.getElementById('profile-id').textContent = user.id || '—';
+    }
+  }
+
+  // ── Modal helpers ──
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  // overlay click to close
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target === el) el.classList.remove('open');
+    });
+  });
+
+  document.getElementById('buy-btn').onclick    = () => openModal('buy-modal');
+  document.getElementById('buy-close').onclick  = () => closeModal('buy-modal');
+  document.getElementById('profile-btn').onclick = () => openModal('profile-modal');
+  document.getElementById('profile-close').onclick = () => closeModal('profile-modal');
+  document.getElementById('support-btn').onclick = () => openModal('support-modal');
+  document.getElementById('support-close').onclick = () => closeModal('support-modal');
+  document.getElementById('setup-btn').onclick   = () => openModal('setup-modal');
+  document.getElementById('setup-close').onclick = () => closeModal('setup-modal');
+
+  // ── Plan selection ──
+  let selectedPlan = '1';
+  document.querySelectorAll('.plan-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedPlan = card.dataset.plan;
+    });
+  });
+
+  document.getElementById('pay-btn').onclick = () => {
+    if (tg) tg.showPopup({
+      title: 'Оплата',
+      message: `Переходим к оплате плана на ${selectedPlan} мес.`,
+      buttons: [{ type: 'ok' }]
+    });
+    closeModal('buy-modal');
+  };
+
+  // ── Setup steps ──
+  const steps = {
+    windows: [
+      { n: 1, text: 'Скачайте <b>Outline Client</b> для Windows' },
+      { n: 2, text: 'Откройте приложение и нажмите <b>«Добавить сервер»</b>' },
+      { n: 3, text: 'Скопируйте ключ из личного кабинета и вставьте его' },
+      { n: 4, text: 'Нажмите <b>«Подключиться»</b> — готово!' },
+    ],
+    macos: [
+      { n: 1, text: 'Установите <b>Outline Client</b> из Mac App Store' },
+      { n: 2, text: 'Откройте приложение и нажмите <b>«+»</b>' },
+      { n: 3, text: 'Вставьте ключ подключения из профиля' },
+      { n: 4, text: 'Нажмите <b>«Подключиться»</b>' },
+    ],
+    android: [
+      { n: 1, text: 'Скачайте <b>Outline</b> из Google Play или APK' },
+      { n: 2, text: 'Откройте приложение' },
+      { n: 3, text: 'Нажмите <b>«Добавить сервер»</b> и вставьте ключ' },
+      { n: 4, text: 'Коснитесь кнопки подключения' },
+    ],
+    ios: [
+      { n: 1, text: 'Установите <b>Outline</b> из App Store' },
+      { n: 2, text: 'Откройте приложение и нажмите <b>«+»</b>' },
+      { n: 3, text: 'Вставьте ключ подключения' },
+      { n: 4, text: 'Подключитесь одним нажатием' },
+    ],
+  };
+
+  function renderSteps(os) {
+    const container = document.getElementById('setup-steps');
+    container.innerHTML = steps[os].map(s => `
+      <div class="step-card">
+        <div class="step-num">${s.n}</div>
+        <div class="step-text">${s.text}</div>
+      </div>
+    `).join('');
+  }
+  renderSteps('windows');
+
+  function selectOS(el) {
+    document.querySelectorAll('.os-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    renderSteps(el.dataset.os);
+  }
+
+  // ── Open Telegram links ──
+  function openTg(handle) {
+    const url = `https://t.me/${handle.replace('@', '')}`;
+    if (tg) tg.openLink(url);
+    else window.open(url, '_blank');
+  }
+
+  // ── Traffic counter (cosmetic) ──
+  let traffic = 36.7;
+  setInterval(() => {
+    traffic += Math.random() * 0.03;
+    document.getElementById('traffic-val').textContent = traffic.toFixed(1);
+  }, 3000);
+</script>
+</body>
+</html>
