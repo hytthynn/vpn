@@ -375,18 +375,22 @@ async function proxyPost(path, body) {
 async function findUser(tgId) {
   try {
     const d = await proxyPost('/api/users/resolve', { telegramId: Number(tgId) });
+    console.log('[averra] /resolve raw:', JSON.stringify(d));
     const u = d?.response ?? d;
     if (u && (u.uuid || u.username)) return u;
-  } catch (_) {}
+  } catch (e) { console.log('[averra] /resolve error:', e); }
   try {
     const d = await proxyGet('/api/users?size=250');
+    console.log('[averra] /users keys:', Object.keys(d||{}));
     const list = d?.response?.users ?? d?.users ?? [];
-    return list.find(u =>
+    const found = list.find(u =>
       String(u.telegramId) === String(tgId) ||
       String(u.tgId)       === String(tgId) ||
       String(u.telegram_id)=== String(tgId)
-    ) || null;
-  } catch (_) {}
+    );
+    if (found) console.log('[averra] found user:', JSON.stringify(found));
+    return found || null;
+  } catch (e) { console.log('[averra] /users error:', e); }
   return null;
 }
 
@@ -464,17 +468,39 @@ async function loadUserData() {
       return;
     }
 
+    // DEBUG: показываем все поля пользователя в консоли
+    console.log('[averra] user object:', JSON.stringify(user, null, 2));
+
     const st       = user.status ?? 'UNKNOWN';
     const isActive = st === 'ACTIVE';
     dot.classList.toggle('bad',      !isActive && st !== 'UNKNOWN');
     dot.classList.toggle('inactive', st === 'UNKNOWN');
     stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
 
-    // Трафик — все возможные поля Remnawave
-    const used  = user.usedTrafficBytes ?? user.usedTraffic ?? user.used_traffic
-                ?? user.trafficUsed ?? user.traffic_used ?? 0;
-    const limit = user.trafficLimitBytes ?? user.trafficLimit ?? user.traffic_limit
-                ?? user.dataLimit ?? user.data_limit ?? 0;
+    // Трафик — перебираем все известные поля Remnawave
+    // В Remnawave значения хранятся в БАЙТАХ (большие числа типа 418_957_000_000)
+    const rawUsed  = user.usedTrafficBytes  ?? user.usedTraffic   ?? user.used_traffic
+                   ?? user.trafficUsed      ?? user.traffic_used  ?? null;
+    const rawLimit = user.trafficLimitBytes ?? user.trafficLimit  ?? user.traffic_limit
+                   ?? user.dataLimit        ?? user.data_limit    ?? null;
+
+    console.log('[averra] rawUsed:', rawUsed, 'rawLimit:', rawLimit);
+    console.log('[averra] all keys:', Object.keys(user));
+
+    // Авто-детекция единиц: если значение маленькое (< 1 048 576) — скорее всего МБ или ГБ,
+    // если большое — байты. Remnawave обычно отдаёт байты.
+    function normalizeToBytes(v) {
+      const n = Number(v);
+      if (!n || isNaN(n) || n < 0) return 0;
+      // Если меньше 1 МБ как байт-значение — возможно это уже ГБ
+      // Remnawave: 390 ГБ = ~418_957_000_000 байт (11+ цифр)
+      // Если пришло просто "390" — умножаем на 1 ГБ
+      if (n < 100000) return n * 1073741824; // трактуем как ГБ
+      return n; // байты
+    }
+
+    const used  = normalizeToBytes(rawUsed);
+    const limit = normalizeToBytes(rawLimit);
 
     let tStr;
     if (used > 0 && limit > 0)  tStr = fmtBytes(used) + ' / ' + fmtBytes(limit);
