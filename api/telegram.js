@@ -51,13 +51,13 @@ function buildOpenAppButton(req, startPayload) {
 
   if (isTelegramMiniAppUrl(targetUrl)) {
     return {
-      text: '🪟 Открыть приложение',
+      text: '📲 Открыть приложение',
       url: targetUrl,
     };
   }
 
   return {
-    text: '🪟 Открыть приложение',
+    text: '📲 Открыть приложение',
     web_app: { url: targetUrl },
   };
 }
@@ -94,7 +94,7 @@ async function sendStartMessage(req, message) {
 
 1️⃣ Откройте приложение
 
-2️⃣ Нажмите «Установка и настройка» и следуйте инструкции, чтобы подключить VPN на свое устройство
+2️⃣ Нажмите «Подключить» и следуйте инструкции, чтобы подключить VPN на свое устройство
 
 3️⃣ Готово! Пользуйтесь ${BRAND_NAME} бесплатно ${TRIAL_DAYS} дня
 
