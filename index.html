@@ -184,6 +184,13 @@
     .admin-badge { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 5px 10px; }
     .admin-badge.on { background: rgba(224,92,92,0.16); color: #ff9f9f; }
     .admin-badge.off { background: rgba(94,194,106,0.16); color: var(--green); }
+    .admin-textarea { min-height: 120px; resize: vertical; }
+    .admin-upload-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .admin-upload-btn { flex: 1; }
+    .admin-preview { display: none; background: var(--surface); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .admin-preview.show { display: block; }
+    .admin-preview-img { display: block; width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; }
+    .admin-preview-name { font-size: 12px; color: var(--text2); line-height: 1.4; word-break: break-word; }
     .maintenance-screen { position: fixed; inset: 0; z-index: 700; display: flex; align-items: center; justify-content: center; padding: 24px; background:
       radial-gradient(circle at 50% 22%, rgba(224,92,92,.18) 0%, rgba(224,92,92,0) 38%),
       linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.28)),
@@ -196,6 +203,7 @@
     .maintenance-text { font-size: 14px; color: var(--text2); line-height: 1.7; }
     .maintenance-caption { margin-top: 14px; font-size: 12px; color: var(--text3); }
     body.maintenance-locked { overflow: hidden; }
+    .btn-primary:disabled, .btn-secondary:disabled, .btn-half:disabled, .copy-btn:disabled, .close-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
   </style>
 </head>
 <body class="app-loading">
@@ -484,6 +492,24 @@
 
     <button class="btn-primary" id="maintenance-toggle-btn" style="margin-bottom:10px">Включить тех. работы</button>
     <div class="promo-result" id="maintenance-admin-result"></div>
+
+    <div class="admin-card">
+      <div class="admin-card-title">Рассылка в бот</div>
+      <textarea class="modal-promo-input admin-textarea" id="broadcast-message" placeholder="Введите сообщение для пользователей"></textarea>
+      <input id="broadcast-photo-input" type="file" accept="image/*" style="display:none" />
+      <div class="admin-upload-row">
+        <button class="btn-secondary admin-upload-btn" id="broadcast-photo-btn">Прикрепить фото</button>
+        <button class="btn-secondary admin-upload-btn" id="broadcast-clear-photo-btn">Удалить фото</button>
+      </div>
+      <div class="admin-preview" id="broadcast-preview">
+        <img class="admin-preview-img" id="broadcast-preview-img" alt="Предпросмотр изображения рассылки" />
+        <div class="admin-preview-name" id="broadcast-preview-name"></div>
+      </div>
+      <div class="admin-note">Сообщение отправится всем пользователям, у которых есть Telegram ID в панели.</div>
+    </div>
+
+    <button class="btn-primary" id="broadcast-send-btn" style="margin-bottom:10px">Отправить рассылку</button>
+    <div class="promo-result" id="broadcast-result"></div>
     <button class="close-btn" id="admin-close">Закрыть</button>
   </div>
 </div>
@@ -580,7 +606,10 @@ let DEFAULT_SQUAD_UUID = '';
 let currentUser = null;
 let currentIsAdmin = false;
 let maintenanceState = { enabled: false, message: 'Сервис временно недоступен. Пожалуйста, попробуйте позже.' };
+let broadcastImageDataUrl = '';
+let broadcastImageName = '';
 const DEFAULT_MAINTENANCE_MESSAGE = 'Сервис временно недоступен. Пожалуйста, попробуйте позже.';
+const MAX_BROADCAST_IMAGE_BYTES = 8 * 1024 * 1024;
 const APP_BOOT_MIN_MS = 900;
 const appBootStartedAt = Date.now();
 let appBootFinished = false;
@@ -876,6 +905,45 @@ async function fetchMaintenanceState() {
   }
 
   return applyMaintenanceLock();
+}
+
+function setBroadcastBusy(isBusy) {
+  document.getElementById('broadcast-send-btn').disabled = isBusy;
+  document.getElementById('broadcast-photo-btn').disabled = isBusy;
+  document.getElementById('broadcast-clear-photo-btn').disabled = isBusy;
+}
+
+function resetBroadcastImage() {
+  broadcastImageDataUrl = '';
+  broadcastImageName = '';
+  document.getElementById('broadcast-photo-input').value = '';
+  renderBroadcastPreview();
+}
+
+function renderBroadcastPreview() {
+  const preview = document.getElementById('broadcast-preview');
+  const img = document.getElementById('broadcast-preview-img');
+  const name = document.getElementById('broadcast-preview-name');
+
+  if (!broadcastImageDataUrl) {
+    preview.classList.remove('show');
+    img.removeAttribute('src');
+    name.textContent = '';
+    return;
+  }
+
+  preview.classList.add('show');
+  img.src = broadcastImageDataUrl;
+  name.textContent = broadcastImageName || 'Изображение прикреплено';
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function readTransactionLog(description = '') {
@@ -1243,7 +1311,9 @@ async function openAdminModal() {
   }
 
   setPromoMessage('maintenance-admin-result', '', false);
+  setPromoMessage('broadcast-result', '', false);
   updateMaintenanceAdminUi();
+  renderBroadcastPreview();
   openModal('admin-modal');
   await fetchMaintenanceState();
 }
@@ -1282,6 +1352,89 @@ document.getElementById('maintenance-toggle-btn').onclick = async () => {
     );
   } catch (e) {
     setPromoMessage('maintenance-admin-result', 'Не удалось изменить режим', true);
+  }
+};
+
+document.getElementById('broadcast-photo-btn').onclick = () => {
+  if (!currentIsAdmin) return;
+  document.getElementById('broadcast-photo-input').click();
+};
+
+document.getElementById('broadcast-clear-photo-btn').onclick = () => {
+  resetBroadcastImage();
+  setPromoMessage('broadcast-result', '', false);
+};
+
+document.getElementById('broadcast-photo-input').addEventListener('change', async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (!String(file.type || '').startsWith('image/')) {
+    resetBroadcastImage();
+    setPromoMessage('broadcast-result', 'Можно прикрепить только изображение', true);
+    return;
+  }
+
+  if (Number(file.size || 0) > MAX_BROADCAST_IMAGE_BYTES) {
+    resetBroadcastImage();
+    setPromoMessage('broadcast-result', 'Изображение слишком большое. До 8 МБ', true);
+    return;
+  }
+
+  try {
+    broadcastImageDataUrl = await readFileAsDataUrl(file);
+    broadcastImageName = file.name || 'broadcast-image';
+    renderBroadcastPreview();
+    setPromoMessage('broadcast-result', 'Фото прикреплено', false);
+  } catch (error) {
+    resetBroadcastImage();
+    setPromoMessage('broadcast-result', error.message || 'Не удалось загрузить изображение', true);
+  }
+});
+
+document.getElementById('broadcast-send-btn').onclick = async () => {
+  if (!currentIsAdmin || !tgUser?.id) {
+    setPromoMessage('broadcast-result', 'Недостаточно прав', true);
+    return;
+  }
+
+  const text = document.getElementById('broadcast-message').value.trim();
+  if (!text && !broadcastImageDataUrl) {
+    setPromoMessage('broadcast-result', 'Введите сообщение или прикрепите фото', true);
+    return;
+  }
+
+  setBroadcastBusy(true);
+  setPromoMessage('broadcast-result', 'Отправляем рассылку…', false);
+
+  try {
+    const r = await fetch('/api/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: tgUser.id,
+        text,
+        imageDataUrl: broadcastImageDataUrl,
+        imageName: broadcastImageName,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      let msg = 'Не удалось отправить рассылку';
+      if (data.error === 'message or image required') msg = 'Введите сообщение или прикрепите фото';
+      else if (data.error === 'message too long') msg = 'Сообщение слишком длинное';
+      else if (data.error === 'invalid image data') msg = 'Не удалось обработать изображение';
+      else if (data.error === 'image too large') msg = 'Изображение слишком большое';
+      throw new Error(msg);
+    }
+
+    const summary = `Отправлено: ${Number(data.sent || 0)} из ${Number(data.total || 0)}`
+      + (Number(data.failed || 0) ? `. Ошибок: ${Number(data.failed || 0)}` : '');
+    setPromoMessage('broadcast-result', summary, false);
+  } catch (error) {
+    setPromoMessage('broadcast-result', error.message || 'Ошибка отправки', true);
+  } finally {
+    setBroadcastBusy(false);
   }
 };
 
