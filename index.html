@@ -120,6 +120,18 @@
     .modal-promo-input::placeholder { color: var(--text3); }
     .promo-result { font-size: 13px; color: var(--green); text-align: center; min-height: 18px; margin-bottom: 8px; }
     .promo-result.error { color: var(--red); }
+    .promo-admin-box { margin-top: 10px; padding-top: 16px; border-top: 1px solid var(--surface2); }
+    .promo-admin-title { font-size: 11px; color: var(--text3); margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .promo-admin-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .promo-admin-item { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; }
+    .promo-admin-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .promo-admin-code { font-size: 14px; font-weight: 600; letter-spacing: 0.4px; }
+    .promo-admin-meta { font-size: 12px; color: var(--text2); line-height: 1.5; margin-top: 4px; }
+    .promo-admin-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .promo-mini-btn { flex: 1; background: var(--surface2); color: var(--text); border: none; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-family: inherit; cursor: pointer; }
+    .promo-mini-btn:active { opacity: 0.8; }
+    .promo-mini-btn.danger { color: var(--red); }
+    .promo-admin-empty { font-size: 12px; color: var(--text3); text-align: center; padding: 8px 0; }
 
     .ref-stat-row { display: flex; gap: 10px; margin-bottom: 10px; }
     .ref-stat { flex: 1; background: var(--bg3); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
@@ -380,6 +392,16 @@
       </svg>
       Применить
     </button>
+
+    <div class="promo-admin-box" id="promo-admin-box" style="display:none">
+      <div class="promo-admin-title">Админ-панель промокодов</div>
+      <input class="modal-promo-input" id="promo-create-code" type="text" placeholder="Новый промокод" autocomplete="off" autocorrect="off" spellcheck="false" />
+      <input class="modal-promo-input" id="promo-create-days" type="number" min="1" max="3650" placeholder="Количество дней" />
+      <div class="promo-result" id="promo-admin-result"></div>
+      <button class="btn-secondary" id="promo-create-btn">Создать промокод</button>
+      <div class="promo-admin-list" id="promo-admin-list"></div>
+    </div>
+
     <button class="close-btn" id="promo-close">Закрыть</button>
   </div>
 </div>
@@ -460,6 +482,8 @@ const STATUS_RU = { ACTIVE:'активен', EXPIRED:'истёк', DISABLED:'о�
 const tg = window.Telegram && window.Telegram.WebApp;
 let tgUser = null;
 let DEFAULT_SQUAD_UUID = '';
+let currentUser = null;
+let currentIsAdmin = false;
 
 // Реферер: парсим startapp=ref_<tgId> из параметров запуска
 let REF_INVITER_ID = null;
@@ -785,7 +809,7 @@ function renderButtons(user) {
     </button>`;
   block.appendChild(row2);
   document.getElementById('referral-btn').onclick = () => openReferralModal();
-  document.getElementById('promo-btn').onclick    = () => openModal('promo-modal');
+  document.getElementById('promo-btn').onclick    = () => openPromoModal();
 }
 
 // ════════════════════════════════════════════
@@ -798,6 +822,8 @@ async function loadUserData() {
   const exp  = document.getElementById('expire-text');
 
   if (!tgUser?.id) {
+    currentUser = null;
+    currentIsAdmin = false;
     stxt.textContent = 'нет данных';
     exp.textContent  = 'войдите через Telegram';
     renderButtons(null);
@@ -820,6 +846,8 @@ async function loadUserData() {
     }
 
     if (!user) {
+      currentUser = null;
+      currentIsAdmin = false;
       stxt.textContent = 'ошибка';
       dot.classList.add('inactive');
       exp.textContent  = 'обратитесь в поддержку';
@@ -830,6 +858,8 @@ async function loadUserData() {
     // ── Статус ──
     const st       = user.status ?? 'UNKNOWN';
     const isActive = st === 'ACTIVE';
+    currentUser = user;
+    currentIsAdmin = (user.description || '').toLowerCase().includes('админ');
     dot.classList.remove('inactive', 'bad');
     if (!isActive) dot.classList.add(st === 'UNKNOWN' ? 'inactive' : 'bad');
     stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
@@ -874,6 +904,8 @@ async function loadUserData() {
 
   } catch (err) {
     console.error('loadUserData:', err);
+    currentUser = null;
+    currentIsAdmin = false;
     document.getElementById('status-text').textContent = 'ошибка загрузки';
     document.getElementById('expire-text').textContent  = 'попробуйте позже';
     renderButtons(null);
@@ -966,6 +998,190 @@ document.getElementById('promo-input').addEventListener('input', () => {
   document.getElementById('promo-result').className   = 'promo-result';
 });
 
+document.getElementById('promo-create-code').addEventListener('input', (e) => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+});
+
+function setPromoMessage(id, text, isError) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'promo-result' + (isError ? ' error' : '');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
+}
+
+function promoStatusLabel(promo) {
+  if (promo.archived) return 'архив';
+  return promo.active ? 'активен' : 'выключен';
+}
+
+async function openPromoModal() {
+  document.getElementById('promo-input').value = '';
+  document.getElementById('promo-create-code').value = '';
+  document.getElementById('promo-create-days').value = '';
+  setPromoMessage('promo-result', '', false);
+  setPromoMessage('promo-admin-result', '', false);
+
+  const adminBox = document.getElementById('promo-admin-box');
+  if (!currentIsAdmin || !tgUser?.id) {
+    adminBox.style.display = 'none';
+    openModal('promo-modal');
+    return;
+  }
+
+  adminBox.style.display = '';
+  document.getElementById('promo-admin-list').innerHTML = '<div class="promo-admin-empty">Загрузка…</div>';
+  openModal('promo-modal');
+  await loadPromoAdminList();
+}
+
+function renderPromoAdminList(promos) {
+  const list = document.getElementById('promo-admin-list');
+  if (!promos.length) {
+    list.innerHTML = '<div class="promo-admin-empty">Промокодов пока нет</div>';
+    return;
+  }
+
+  list.innerHTML = promos.map(promo => `
+    <div class="promo-admin-item">
+      <div class="promo-admin-top">
+        <div>
+          <div class="promo-admin-code">${escapeHtml(promo.code)}</div>
+          <div class="promo-admin-meta">
+            ${promo.days} дн. • активаций: ${promo.redemptionsCount}<br>
+            Статус: ${promoStatusLabel(promo)}
+          </div>
+        </div>
+        <span class="badge">${promoStatusLabel(promo)}</span>
+      </div>
+      ${promo.archived ? '' : `
+        <div class="promo-admin-actions">
+          <button class="promo-mini-btn" data-promo-toggle="${promo.uuid}" data-next-active="${promo.active ? '0' : '1'}">${promo.active ? 'Выключить' : 'Включить'}</button>
+          <button class="promo-mini-btn danger" data-promo-archive="${promo.uuid}">Удалить</button>
+        </div>
+      `}
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-promo-toggle]').forEach(btn => {
+    btn.onclick = () => togglePromo(btn.dataset.promoToggle, btn.dataset.nextActive === '1');
+  });
+
+  list.querySelectorAll('[data-promo-archive]').forEach(btn => {
+    btn.onclick = () => archivePromo(btn.dataset.promoArchive);
+  });
+}
+
+async function loadPromoAdminList() {
+  if (!tgUser?.id) return;
+
+  try {
+    const r = await fetch('/api/promo?telegramId=' + encodeURIComponent(tgUser.id));
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+
+    if (!data.isAdmin) {
+      document.getElementById('promo-admin-box').style.display = 'none';
+      return;
+    }
+
+    renderPromoAdminList(Array.isArray(data.promos) ? data.promos : []);
+  } catch (e) {
+    document.getElementById('promo-admin-list').innerHTML = '<div class="promo-admin-empty">Не удалось загрузить промокоды</div>';
+  }
+}
+
+async function togglePromo(promoUuid, active) {
+  try {
+    const r = await fetch('/api/promo', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'toggle',
+        telegramId: tgUser.id,
+        promoUuid,
+        active,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    setPromoMessage('promo-admin-result', active ? 'Промокод включён' : 'Промокод выключен', false);
+    await loadPromoAdminList();
+  } catch (e) {
+    setPromoMessage('promo-admin-result', 'Не удалось обновить промокод', true);
+  }
+}
+
+async function archivePromo(promoUuid) {
+  try {
+    const r = await fetch('/api/promo', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'archive',
+        telegramId: tgUser.id,
+        promoUuid,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    setPromoMessage('promo-admin-result', 'Промокод удалён', false);
+    await loadPromoAdminList();
+  } catch (e) {
+    setPromoMessage('promo-admin-result', 'Не удалось удалить промокод', true);
+  }
+}
+
+document.getElementById('promo-create-btn').onclick = async () => {
+  const code = document.getElementById('promo-create-code').value.trim().toUpperCase();
+  const days = Number(document.getElementById('promo-create-days').value);
+
+  if (!code) {
+    setPromoMessage('promo-admin-result', 'Введите код', true);
+    return;
+  }
+
+  if (!Number.isInteger(days) || days < 1) {
+    setPromoMessage('promo-admin-result', 'Введите количество дней', true);
+    return;
+  }
+
+  setPromoMessage('promo-admin-result', 'Создаём…', false);
+
+  try {
+    const r = await fetch('/api/promo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create',
+        telegramId: tgUser.id,
+        code,
+        days,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const msg = data.error === 'promo already exists' ? 'Такой промокод уже существует' : 'Не удалось создать промокод';
+      throw new Error(msg);
+    }
+
+    document.getElementById('promo-create-code').value = '';
+    document.getElementById('promo-create-days').value = '';
+    setPromoMessage('promo-admin-result', 'Промокод создан', false);
+    await loadPromoAdminList();
+  } catch (e) {
+    setPromoMessage('promo-admin-result', e.message || 'Ошибка создания', true);
+  }
+};
+
 document.getElementById('promo-apply-btn').onclick = async () => {
   const code = document.getElementById('promo-input').value.trim().toUpperCase();
   const res  = document.getElementById('promo-result');
@@ -974,19 +1190,23 @@ document.getElementById('promo-apply-btn').onclick = async () => {
 
   res.textContent = 'Проверяем…'; res.className = 'promo-result';
   try {
-    const r = await fetch('/api/proxy?path=' + encodeURIComponent('/api/promo/apply'), {
+    const r = await fetch('/api/promo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, telegramId: tgUser.id }),
+      body: JSON.stringify({ action: 'apply', code, telegramId: tgUser.id }),
     });
+    const data = await r.json().catch(() => ({}));
     if (r.ok) {
       res.textContent = '✓ Промокод применён!';
       res.className   = 'promo-result';
       document.getElementById('promo-input').value = '';
       setTimeout(() => { closeModal('promo-modal'); loadUserData(); }, 1500);
     } else {
-      const txt = await r.text().catch(() => '');
-      res.textContent = txt.includes('not found') || r.status === 404 ? 'Промокод не найден' : 'Промокод недействителен';
+      const err = data.error || '';
+      if (err === 'promo not found') res.textContent = 'Промокод не найден';
+      else if (err === 'promo inactive') res.textContent = 'Промокод отключён';
+      else if (err === 'promo already used') res.textContent = 'Вы уже использовали этот промокод';
+      else res.textContent = 'Промокод недействителен';
       res.className = 'promo-result error';
     }
   } catch (_) {
