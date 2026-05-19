@@ -138,8 +138,8 @@ function parsePostReference(input) {
   throw new Error('invalid post reference');
 }
 
-async function copyPostToUser(recipient, source) {
-  return telegramRequest('copyMessage', {
+async function forwardPostToUser(recipient, source) {
+  return telegramRequest('forwardMessage', {
     chat_id: Number(recipient.telegramId),
     from_chat_id: source.fromChatId,
     message_id: source.messageId,
@@ -176,7 +176,7 @@ export default async function handler(req) {
 
     for (const recipient of recipients) {
       try {
-        await copyPostToUser(recipient, source);
+        await forwardPostToUser(recipient, source);
         results.push({
           telegramId: recipient.telegramId,
           sent: true,
