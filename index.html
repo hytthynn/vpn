@@ -510,6 +510,15 @@
 
     <button class="btn-primary" id="broadcast-send-btn" style="margin-bottom:10px">Отправить рассылку</button>
     <div class="promo-result" id="broadcast-result"></div>
+
+    <div class="admin-card">
+      <div class="admin-card-title">Репост поста</div>
+      <input class="modal-promo-input" id="repost-post-input" type="text" placeholder="Ссылка на пост или ID сообщения" autocomplete="off" autocorrect="off" spellcheck="false" />
+      <div class="admin-note">Поддерживаются ссылки вида `t.me/channel/123`, `t.me/s/channel/123`, `t.me/c/.../123` и просто ID сообщения.</div>
+    </div>
+
+    <button class="btn-primary" id="repost-post-btn" style="margin-bottom:10px">Репостнуть пост</button>
+    <div class="promo-result" id="repost-post-result"></div>
     <button class="close-btn" id="admin-close">Закрыть</button>
   </div>
 </div>
@@ -913,6 +922,11 @@ function setBroadcastBusy(isBusy) {
   document.getElementById('broadcast-clear-photo-btn').disabled = isBusy;
 }
 
+function setRepostBusy(isBusy) {
+  document.getElementById('repost-post-btn').disabled = isBusy;
+  document.getElementById('repost-post-input').disabled = isBusy;
+}
+
 function resetBroadcastImage() {
   broadcastImageDataUrl = '';
   broadcastImageName = '';
@@ -1312,6 +1326,7 @@ async function openAdminModal() {
 
   setPromoMessage('maintenance-admin-result', '', false);
   setPromoMessage('broadcast-result', '', false);
+  setPromoMessage('repost-post-result', '', false);
   updateMaintenanceAdminUi();
   renderBroadcastPreview();
   openModal('admin-modal');
@@ -1435,6 +1450,49 @@ document.getElementById('broadcast-send-btn').onclick = async () => {
     setPromoMessage('broadcast-result', error.message || 'Ошибка отправки', true);
   } finally {
     setBroadcastBusy(false);
+  }
+};
+
+document.getElementById('repost-post-btn').onclick = async () => {
+  if (!currentIsAdmin || !tgUser?.id) {
+    setPromoMessage('repost-post-result', 'Недостаточно прав', true);
+    return;
+  }
+
+  const postReference = document.getElementById('repost-post-input').value.trim();
+  if (!postReference) {
+    setPromoMessage('repost-post-result', 'Вставьте ссылку на пост или ID сообщения', true);
+    return;
+  }
+
+  setRepostBusy(true);
+  setPromoMessage('repost-post-result', 'Отправляем пост пользователям…', false);
+
+  try {
+    const r = await fetch('/api/repost-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: tgUser.id,
+        postReference,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      let msg = 'Не удалось репостнуть пост';
+      if (data.error === 'missing post reference') msg = 'Вставьте ссылку на пост или ID сообщения';
+      else if (data.error === 'invalid post reference') msg = 'Ссылка или ID поста указаны неверно';
+      else if (data.error === 'source chat required') msg = 'Для отправки только по ID нужен NEWS_SOURCE_CHAT_ID';
+      throw new Error(msg);
+    }
+
+    const summary = `Отправлено: ${Number(data.sent || 0)} из ${Number(data.total || 0)}`
+      + (Number(data.failed || 0) ? `. Ошибок: ${Number(data.failed || 0)}` : '');
+    setPromoMessage('repost-post-result', summary, false);
+  } catch (error) {
+    setPromoMessage('repost-post-result', error.message || 'Ошибка отправки', true);
+  } finally {
+    setRepostBusy(false);
   }
 };
 
