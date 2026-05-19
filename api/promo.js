@@ -6,6 +6,7 @@ import {
   findUser,
   isAdminDescription,
   listPromos,
+  panelDelete,
   panelPatch,
   panelPost,
 } from './_panel.js';
@@ -33,17 +34,27 @@ function parseDays(value) {
   return days;
 }
 
+function parseActivationLimit(value) {
+  const count = Number(value);
+  if (!Number.isInteger(count) || count < 1 || count > 100000) return null;
+  return count;
+}
+
 function toPublicPromo(promo) {
+  const redemptionsCount = Array.isArray(promo.redemptions) ? promo.redemptions.length : 0;
+  const activationLimit = Number(promo.activationLimit ?? 1);
+
   return {
     uuid: promo.uuid,
     code: promo.code,
     days: promo.days,
+    activationLimit,
+    remainingActivations: Math.max(0, activationLimit - redemptionsCount),
     active: promo.active !== false,
-    archived: promo.archived === true,
     createdAt: promo.createdAt,
     updatedAt: promo.updatedAt,
     createdBy: promo.createdBy ?? '',
-    redemptionsCount: Array.isArray(promo.redemptions) ? promo.redemptions.length : 0,
+    redemptionsCount,
   };
 }
 
@@ -74,15 +85,15 @@ async function requireAdmin(telegramId) {
   return { user };
 }
 
-function buildPromoPayload({ code, days, adminUser }) {
+function buildPromoPayload({ code, days, activationLimit, adminUser }) {
   const now = new Date().toISOString();
 
   return {
     kind: 'promo',
     code,
     days,
+    activationLimit,
     active: true,
-    archived: false,
     createdAt: now,
     updatedAt: now,
     createdBy: String(adminUser.telegramId ?? adminUser.tgId ?? ''),
@@ -114,7 +125,7 @@ async function handleApply(body) {
   if (!telegramId) return json({ error: 'missing telegramId' }, 400);
 
   const promo = await getPromoByCode(code);
-  if (!promo || promo.archived) {
+  if (!promo) {
     return json({ error: 'promo not found' }, 404);
   }
 
@@ -129,9 +140,16 @@ async function handleApply(body) {
 
   const alreadyUsed = Array.isArray(promo.redemptions) &&
     promo.redemptions.some((entry) => String(entry.telegramId) === String(telegramId));
+  const activationLimit = Number(promo.activationLimit ?? 1);
+  const redemptionsCount = Array.isArray(promo.redemptions) ? promo.redemptions.length : 0;
+  const remainingActivations = activationLimit - redemptionsCount;
 
   if (alreadyUsed) {
     return json({ error: 'promo already used' }, 409);
+  }
+
+  if (remainingActivations <= 0) {
+    return json({ error: 'promo exhausted' }, 409);
   }
 
   const expireAt = await extendSubscription(user, promo.days);
@@ -164,8 +182,9 @@ async function handleCreate(body) {
 
   const code = normalizePromoCode(body.code);
   const days = parseDays(body.days);
+  const activationLimit = parseActivationLimit(body.activationLimit);
 
-  if (!code || code.length < 4 || code.length > 32) {
+  if (!code || code.length < 3 || code.length > 32) {
     return json({ error: 'invalid promo code' }, 400);
   }
 
@@ -173,12 +192,16 @@ async function handleCreate(body) {
     return json({ error: 'invalid days value' }, 400);
   }
 
+  if (!activationLimit) {
+    return json({ error: 'invalid activation limit' }, 400);
+  }
+
   const exists = await getPromoByCode(code);
   if (exists) {
     return json({ error: 'promo already exists' }, 409);
   }
 
-  const promo = buildPromoPayload({ code, days, adminUser: admin.user });
+  const promo = buildPromoPayload({ code, days, activationLimit, adminUser: admin.user });
   const storageUser = buildPromoStorageUser(code);
 
   const created = await panelPost('/api/users', {
@@ -225,35 +248,34 @@ async function handlePatch(body) {
     return json({ error: 'promo not found' }, 404);
   }
 
-  let nextPromo;
-  const now = new Date().toISOString();
-
   if (body.action === 'toggle') {
-    nextPromo = {
+    const nextPromo = {
       ...promo,
       active: Boolean(body.active),
-      updatedAt: now,
+      updatedAt: new Date().toISOString(),
     };
-  } else if (body.action === 'archive') {
-    nextPromo = {
-      ...promo,
-      active: false,
-      archived: true,
-      updatedAt: now,
-    };
-  } else {
-    return json({ error: 'unknown action' }, 400);
+    await panelPatch('/api/users', {
+      uuid: promo.uuid,
+      description: encodePromoData(nextPromo),
+    });
+
+    return json({
+      ok: true,
+      promo: toPublicPromo(nextPromo),
+    });
   }
 
-  await panelPatch('/api/users', {
-    uuid: promo.uuid,
-    description: encodePromoData(nextPromo),
-  });
+  if (body.action === 'delete') {
+    try {
+      await panelDelete(`/api/users/${promo.uuid}`);
+    } catch (error) {
+      await panelDelete('/api/users', { uuid: promo.uuid });
+    }
 
-  return json({
-    ok: true,
-    promo: toPublicPromo(nextPromo),
-  });
+    return json({ ok: true, deleted: true, promoUuid: promo.uuid });
+  }
+
+  return json({ error: 'unknown action' }, 400);
 }
 
 export default async function handler(req) {

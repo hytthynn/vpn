@@ -41,6 +41,10 @@ export function panelPatch(path, body) {
   return panelRequest('PATCH', path, body);
 }
 
+export function panelDelete(path, body) {
+  return panelRequest('DELETE', path, body);
+}
+
 export function extractUser(data) {
   if (!data) return null;
   if (data.response?.uuid) return data.response;
@@ -113,7 +117,7 @@ export async function extendSubscription(user, days) {
 }
 
 export function isAdminDescription(description = '') {
-  return String(description).toLowerCase().includes('админ');
+  return String(description).toLowerCase().includes('admin');
 }
 
 export function encodePromoData(data) {

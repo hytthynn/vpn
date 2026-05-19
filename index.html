@@ -397,6 +397,7 @@
       <div class="promo-admin-title">Админ-панель промокодов</div>
       <input class="modal-promo-input" id="promo-create-code" type="text" placeholder="Новый промокод" autocomplete="off" autocorrect="off" spellcheck="false" />
       <input class="modal-promo-input" id="promo-create-days" type="number" min="1" max="3650" placeholder="Количество дней" />
+      <input class="modal-promo-input" id="promo-create-activations" type="number" min="1" max="100000" placeholder="Количество активаций" />
       <div class="promo-result" id="promo-admin-result"></div>
       <button class="btn-secondary" id="promo-create-btn">Создать промокод</button>
       <div class="promo-admin-list" id="promo-admin-list"></div>
@@ -859,7 +860,7 @@ async function loadUserData() {
     const st       = user.status ?? 'UNKNOWN';
     const isActive = st === 'ACTIVE';
     currentUser = user;
-    currentIsAdmin = (user.description || '').toLowerCase().includes('админ');
+    currentIsAdmin = (user.description || '').toLowerCase().includes('admin');
     dot.classList.remove('inactive', 'bad');
     if (!isActive) dot.classList.add(st === 'UNKNOWN' ? 'inactive' : 'bad');
     stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
@@ -1019,7 +1020,6 @@ function escapeHtml(str) {
 }
 
 function promoStatusLabel(promo) {
-  if (promo.archived) return 'архив';
   return promo.active ? 'активен' : 'выключен';
 }
 
@@ -1027,6 +1027,7 @@ async function openPromoModal() {
   document.getElementById('promo-input').value = '';
   document.getElementById('promo-create-code').value = '';
   document.getElementById('promo-create-days').value = '';
+  document.getElementById('promo-create-activations').value = '';
   setPromoMessage('promo-result', '', false);
   setPromoMessage('promo-admin-result', '', false);
 
@@ -1056,18 +1057,17 @@ function renderPromoAdminList(promos) {
         <div>
           <div class="promo-admin-code">${escapeHtml(promo.code)}</div>
           <div class="promo-admin-meta">
-            ${promo.days} дн. • активаций: ${promo.redemptionsCount}<br>
+            ${promo.days} дн. • использовано: ${promo.redemptionsCount}/${promo.activationLimit}<br>
+            Осталось активаций: ${promo.remainingActivations}<br>
             Статус: ${promoStatusLabel(promo)}
           </div>
         </div>
         <span class="badge">${promoStatusLabel(promo)}</span>
       </div>
-      ${promo.archived ? '' : `
-        <div class="promo-admin-actions">
-          <button class="promo-mini-btn" data-promo-toggle="${promo.uuid}" data-next-active="${promo.active ? '0' : '1'}">${promo.active ? 'Выключить' : 'Включить'}</button>
-          <button class="promo-mini-btn danger" data-promo-archive="${promo.uuid}">Удалить</button>
-        </div>
-      `}
+      <div class="promo-admin-actions">
+        <button class="promo-mini-btn" data-promo-toggle="${promo.uuid}" data-next-active="${promo.active ? '0' : '1'}">${promo.active ? 'Выключить' : 'Включить'}</button>
+        <button class="promo-mini-btn danger" data-promo-delete="${promo.uuid}">Удалить</button>
+      </div>
     </div>
   `).join('');
 
@@ -1075,8 +1075,8 @@ function renderPromoAdminList(promos) {
     btn.onclick = () => togglePromo(btn.dataset.promoToggle, btn.dataset.nextActive === '1');
   });
 
-  list.querySelectorAll('[data-promo-archive]').forEach(btn => {
-    btn.onclick = () => archivePromo(btn.dataset.promoArchive);
+  list.querySelectorAll('[data-promo-delete]').forEach(btn => {
+    btn.onclick = () => deletePromo(btn.dataset.promoDelete);
   });
 }
 
@@ -1120,20 +1120,20 @@ async function togglePromo(promoUuid, active) {
   }
 }
 
-async function archivePromo(promoUuid) {
+async function deletePromo(promoUuid) {
   try {
     const r = await fetch('/api/promo', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'archive',
+        action: 'delete',
         telegramId: tgUser.id,
         promoUuid,
       }),
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
-    setPromoMessage('promo-admin-result', 'Промокод удалён', false);
+    setPromoMessage('promo-admin-result', 'Промокод удалён полностью', false);
     await loadPromoAdminList();
   } catch (e) {
     setPromoMessage('promo-admin-result', 'Не удалось удалить промокод', true);
@@ -1143,6 +1143,7 @@ async function archivePromo(promoUuid) {
 document.getElementById('promo-create-btn').onclick = async () => {
   const code = document.getElementById('promo-create-code').value.trim().toUpperCase();
   const days = Number(document.getElementById('promo-create-days').value);
+  const activationLimit = Number(document.getElementById('promo-create-activations').value);
 
   if (!code) {
     setPromoMessage('promo-admin-result', 'Введите код', true);
@@ -1151,6 +1152,11 @@ document.getElementById('promo-create-btn').onclick = async () => {
 
   if (!Number.isInteger(days) || days < 1) {
     setPromoMessage('promo-admin-result', 'Введите количество дней', true);
+    return;
+  }
+
+  if (!Number.isInteger(activationLimit) || activationLimit < 1) {
+    setPromoMessage('promo-admin-result', 'Введите количество активаций', true);
     return;
   }
 
@@ -1165,16 +1171,22 @@ document.getElementById('promo-create-btn').onclick = async () => {
         telegramId: tgUser.id,
         code,
         days,
+        activationLimit,
       }),
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-      const msg = data.error === 'promo already exists' ? 'Такой промокод уже существует' : 'Не удалось создать промокод';
+      let msg = 'Не удалось создать промокод';
+      if (data.error === 'promo already exists') msg = 'Такой промокод уже существует';
+      else if (data.error === 'invalid promo code') msg = 'Код должен быть длиной от 3 символов';
+      else if (data.error === 'invalid days value') msg = 'Некорректное количество дней';
+      else if (data.error === 'invalid activation limit') msg = 'Некорректное количество активаций';
       throw new Error(msg);
     }
 
     document.getElementById('promo-create-code').value = '';
     document.getElementById('promo-create-days').value = '';
+    document.getElementById('promo-create-activations').value = '';
     setPromoMessage('promo-admin-result', 'Промокод создан', false);
     await loadPromoAdminList();
   } catch (e) {
@@ -1206,6 +1218,7 @@ document.getElementById('promo-apply-btn').onclick = async () => {
       if (err === 'promo not found') res.textContent = 'Промокод не найден';
       else if (err === 'promo inactive') res.textContent = 'Промокод отключён';
       else if (err === 'promo already used') res.textContent = 'Вы уже использовали этот промокод';
+      else if (err === 'promo exhausted') res.textContent = 'Лимит активаций исчерпан';
       else res.textContent = 'Промокод недействителен';
       res.className = 'promo-result error';
     }
