@@ -17,6 +17,7 @@ const PLANS = {
 
 // Реферальный бонус: 15% дней от оплаченного плана
 const REF_BONUS_PERCENT = 0.15;
+const TX_LOG_MARKER = 'txlog_v1:';
 
 // ─── CORS ──────────────────────────────────────────────────────────────────
 const CORS = {
@@ -170,6 +171,47 @@ async function extendSubscription(user, days) {
   return newExp;
 }
 
+function readTransactionLog(description = '') {
+  const match = String(description).match(/txlog_v1:([^\s]+)/);
+  if (!match) return [];
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(match[1]));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('[tx] parse error:', error.message);
+    return [];
+  }
+}
+
+function writeTransactionLog(description = '', transactions = []) {
+  const cleanDescription = String(description).replace(/\s*txlog_v1:[^\s]+/g, '').trim();
+  const payload = TX_LOG_MARKER + encodeURIComponent(JSON.stringify(transactions.slice(0, 20)));
+  return cleanDescription ? `${cleanDescription} ${payload}` : payload;
+}
+
+async function saveSuccessfulTransaction(tgId, transaction) {
+  const freshUser = await findUser(tgId);
+  if (!freshUser?.uuid) {
+    console.warn('[tx] user not found while saving transaction:', tgId);
+    return;
+  }
+
+  const currentTransactions = readTransactionLog(freshUser.description || '');
+  const duplicate = transaction.operationId &&
+    currentTransactions.some((item) => String(item.operationId) === String(transaction.operationId));
+
+  if (duplicate) {
+    console.log('[tx] duplicate operation, skip:', transaction.operationId);
+    return;
+  }
+
+  const nextTransactions = [transaction, ...currentTransactions].slice(0, 20);
+  const nextDescription = writeTransactionLog(freshUser.description || '', nextTransactions);
+  await panelPatch('/api/users', { uuid: freshUser.uuid, description: nextDescription });
+  console.log('[tx] transaction saved:', transaction.operationId || transaction.paidAt);
+}
+
 /**
  * Реферальный бонус:
  * 1. Читаем description приглашённого — там "ref:<inviterTgId>"
@@ -178,7 +220,8 @@ async function extendSubscription(user, days) {
  * 4. В description реферала обновляем "ref_bonus:<totalDays>" для статистики
  */
 async function processReferralBonus(referredUser, paidDays) {
-  const desc = referredUser.description || '';
+  const freshUser = await findUser(referredUser.telegramId ?? referredUser.tgId ?? referredUser.telegram_id);
+  const desc = freshUser?.description || referredUser.description || '';
 
   const refMatch = desc.match(/ref:(\d+)/);
   if (!refMatch) {
@@ -235,6 +278,7 @@ export default async function handler(req) {
   const label   = params.get('label') ?? '';
   const amount  = parseFloat(params.get('amount') ?? '0');
   const codepro = params.get('codepro') === 'true';
+  const operationId = params.get('operation_id') ?? '';
   console.log('[webhook]', { label, amount });
 
   if (codepro) return new Response('codepro ignored', { status: 200, headers: CORS });
@@ -266,6 +310,20 @@ export default async function handler(req) {
   // 6. Реферальный бонус (не блокируем — ошибка бонуса не должна ронять webhook)
   try { await processReferralBonus(user, days); }
   catch (err) { console.error('[webhook] referral bonus error:', err); }
+
+  // 7. Сохраняем транзакцию пользователя в description
+  try {
+    await saveSuccessfulTransaction(tgId, {
+      operationId,
+      amount,
+      days,
+      plan,
+      paidAt: new Date().toISOString(),
+      label,
+    });
+  } catch (err) {
+    console.error('[webhook] save transaction error:', err);
+  }
 
   return new Response('ok', { status: 200, headers: CORS });
 }
