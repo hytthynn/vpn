@@ -55,6 +55,41 @@ function formatExpireDate(iso) {
   });
 }
 
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
+function normalizeUrl(url = '') {
+  return String(url).trim().replace(/\/+$/, '');
+}
+
+function isTelegramMiniAppUrl(url = '') {
+  return /^https:\/\/t\.me\/[^/]+\/app(?:[/?#]|$)/i.test(String(url).trim());
+}
+
+function buildOpenAppButton(req) {
+  const explicitUrl = normalizeUrl(process.env.WEBAPP_URL);
+  const targetUrl = explicitUrl || (new URL(req.url).origin + '/');
+
+  if (isTelegramMiniAppUrl(targetUrl)) {
+    return {
+      text: 'Открыть приложение',
+      url: targetUrl,
+    };
+  }
+
+  return {
+    text: 'Открыть приложение',
+    web_app: { url: targetUrl },
+  };
+}
+
 async function telegramRequest(method, payload) {
   if (!TELEGRAM_BOT_TOKEN) {
     throw new Error('TELEGRAM_BOT_TOKEN env var is not set');
@@ -74,23 +109,31 @@ async function telegramRequest(method, payload) {
   return data;
 }
 
-async function sendReminder(user) {
+async function sendReminder(req, user) {
   const supportLine = SUPPORT_USERNAME
     ? `Если нужна помощь, напишите в поддержку: @${SUPPORT_USERNAME}`
     : 'Если нужна помощь, напишите в поддержку.';
 
   const text =
-`Напоминаем: ваша подписка ${BRAND_NAME} закончится через 1 день.
+`<b>${escapeHtml(BRAND_NAME)}</b>
 
-Подписка активна до: ${formatExpireDate(user.expireAt)}
+⏳ <b>Подписка скоро закончится</b>
 
-Чтобы не потерять доступ, продлите подписку заранее.
+Доступ активен до: <b>${escapeHtml(formatExpireDate(user.expireAt))}</b>
 
-${supportLine}`;
+Продлите подписку заранее, чтобы пользоваться VPN без перерыва.
+
+${escapeHtml(supportLine)}`;
 
   await telegramRequest('sendMessage', {
     chat_id: Number(user.telegramId ?? user.tgId ?? user.telegram_id),
     text,
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [buildOpenAppButton(req)],
+      ],
+    },
     disable_web_page_preview: true,
   });
 }
@@ -136,7 +179,7 @@ export default async function handler(req) {
 
     for (const user of candidates) {
       try {
-        await sendReminder(user);
+        await sendReminder(req, user);
         await panelPatch('/api/users', {
           uuid: user.uuid,
           description: writeReminderMarker(user.description || '', user.expireAt ?? user.expiredAt ?? ''),

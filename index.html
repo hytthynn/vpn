@@ -177,6 +177,25 @@
     .ref-link-row { display: flex; align-items: center; gap: 8px; }
     .ref-link-val { flex: 1; font-size: 12px; color: var(--text2); word-break: break-all; line-height: 1.4; }
     .ref-desc { font-size: 13px; color: var(--text2); line-height: 1.6; background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; }
+    .admin-card { background: var(--bg3); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; }
+    .admin-card-title { font-size: 11px; color: var(--text3); margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .admin-state { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .admin-note { font-size: 13px; color: var(--text2); line-height: 1.6; }
+    .admin-badge { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 5px 10px; }
+    .admin-badge.on { background: rgba(224,92,92,0.16); color: #ff9f9f; }
+    .admin-badge.off { background: rgba(94,194,106,0.16); color: var(--green); }
+    .maintenance-screen { position: fixed; inset: 0; z-index: 700; display: flex; align-items: center; justify-content: center; padding: 24px; background:
+      radial-gradient(circle at 50% 22%, rgba(224,92,92,.18) 0%, rgba(224,92,92,0) 38%),
+      linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.28)),
+      rgba(24,24,24,.92);
+      opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.25s ease, visibility 0.25s ease; }
+    .maintenance-screen.show { opacity: 1; visibility: visible; pointer-events: all; }
+    .maintenance-card { width: min(100%, 360px); background: rgba(50,50,50,.96); border: 1px solid rgba(255,255,255,.06); border-radius: 24px; padding: 26px 22px; text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.45); backdrop-filter: blur(10px); }
+    .maintenance-icon { width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 18px; background: rgba(224,92,92,0.12); display: flex; align-items: center; justify-content: center; color: #ffb1b1; }
+    .maintenance-title { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+    .maintenance-text { font-size: 14px; color: var(--text2); line-height: 1.7; }
+    .maintenance-caption { margin-top: 14px; font-size: 12px; color: var(--text3); }
+    body.maintenance-locked { overflow: hidden; }
   </style>
 </head>
 <body class="app-loading">
@@ -219,6 +238,19 @@
 <div class="actions" id="actions-block"></div>
 
 <div class="toast" id="toast"></div>
+
+<div class="maintenance-screen" id="maintenance-screen">
+  <div class="maintenance-card">
+    <div class="maintenance-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.72 3h16.92a2 2 0 001.72-3l-8.47-14.14a2 2 0 00-3.44 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="maintenance-title">Технические работы</div>
+    <div class="maintenance-text" id="maintenance-text">Сервис временно недоступен. Пожалуйста, попробуйте позже.</div>
+    <div class="maintenance-caption">Доступ восстановится после завершения работ.</div>
+  </div>
+</div>
 
 <!-- ═══ BUY / EXTEND MODAL ═══ -->
 <div class="modal-overlay" id="buy-modal">
@@ -435,6 +467,27 @@
   </div>
 </div>
 
+<!-- ═══ ADMIN MODAL ═══ -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Админ-панель</div>
+
+    <div class="admin-card">
+      <div class="admin-card-title">Режим техработ</div>
+      <div class="admin-state">
+        <span class="admin-badge off" id="maintenance-admin-badge">выключен</span>
+        <span class="admin-note" id="maintenance-admin-updated">Пользователи могут открывать приложение.</span>
+      </div>
+      <div class="admin-note" id="maintenance-admin-note">При включении режима приложение будет доступно только администратору.</div>
+    </div>
+
+    <button class="btn-primary" id="maintenance-toggle-btn" style="margin-bottom:10px">Включить тех. работы</button>
+    <div class="promo-result" id="maintenance-admin-result"></div>
+    <button class="close-btn" id="admin-close">Закрыть</button>
+  </div>
+</div>
+
 <!-- ═══ TERMS MODAL ═══ -->
 <div class="modal-overlay" id="terms-modal">
   <div class="modal">
@@ -526,6 +579,8 @@ let tgUser = null;
 let DEFAULT_SQUAD_UUID = '';
 let currentUser = null;
 let currentIsAdmin = false;
+let maintenanceState = { enabled: false, message: 'Сервис временно недоступен. Пожалуйста, попробуйте позже.' };
+const DEFAULT_MAINTENANCE_MESSAGE = 'Сервис временно недоступен. Пожалуйста, попробуйте позже.';
 const APP_BOOT_MIN_MS = 900;
 const appBootStartedAt = Date.now();
 let appBootFinished = false;
@@ -751,6 +806,78 @@ function finishAppBoot() {
   setTimeout(finish, remaining);
 }
 
+function formatAdminTime(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function getMaintenanceMessage(state = maintenanceState) {
+  return String(state?.message || DEFAULT_MAINTENANCE_MESSAGE).trim() || DEFAULT_MAINTENANCE_MESSAGE;
+}
+
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay.open').forEach((el) => el.classList.remove('open'));
+}
+
+function applyMaintenanceLock() {
+  const locked = Boolean(maintenanceState.enabled && !currentIsAdmin);
+  document.getElementById('maintenance-text').textContent = getMaintenanceMessage();
+  document.getElementById('maintenance-screen').classList.toggle('show', locked);
+  document.body.classList.toggle('maintenance-locked', locked);
+  if (locked) closeAllModals();
+  return locked;
+}
+
+function updateMaintenanceAdminUi(updatedAt = '') {
+  const badge = document.getElementById('maintenance-admin-badge');
+  const updated = document.getElementById('maintenance-admin-updated');
+  const note = document.getElementById('maintenance-admin-note');
+  const toggle = document.getElementById('maintenance-toggle-btn');
+  const enabled = Boolean(maintenanceState.enabled);
+
+  badge.textContent = enabled ? 'включен' : 'выключен';
+  badge.className = 'admin-badge ' + (enabled ? 'on' : 'off');
+  updated.textContent = enabled
+    ? 'Доступ ограничен для всех, кроме администратора.'
+    : 'Пользователи могут открывать приложение.';
+  note.textContent = enabled
+    ? 'Пока режим активен, пользователи увидят экран технических работ сразу после загрузки приложения.'
+    : 'При включении режима приложение будет доступно только администратору.';
+  toggle.textContent = enabled ? 'Выключить тех. работы' : 'Включить тех. работы';
+  if (updatedAt) {
+    updated.textContent += ' Обновлено: ' + formatAdminTime(updatedAt);
+  }
+}
+
+async function fetchMaintenanceState() {
+  try {
+    const r = await fetch('/api/maintenance');
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    maintenanceState = {
+      enabled: Boolean(data.enabled),
+      message: getMaintenanceMessage(data),
+    };
+    updateMaintenanceAdminUi(data.updatedAt || '');
+  } catch (e) {
+    console.warn('[maintenance] load error:', e.message);
+    maintenanceState = {
+      enabled: Boolean(maintenanceState.enabled),
+      message: getMaintenanceMessage(maintenanceState),
+    };
+    updateMaintenanceAdminUi();
+  }
+
+  return applyMaintenanceLock();
+}
+
 function readTransactionLog(description = '') {
   const match = String(description).match(/txlog_v1:([^\s]+)/);
   if (!match) return [];
@@ -818,6 +945,7 @@ document.getElementById('support-close').onclick  = () => closeModal('support-mo
 document.getElementById('connect-close').onclick  = () => closeModal('connect-modal');
 document.getElementById('referral-close').onclick = () => closeModal('referral-modal');
 document.getElementById('promo-close').onclick    = () => closeModal('promo-modal');
+document.getElementById('admin-close').onclick    = () => closeModal('admin-modal');
 
 // ════════════════════════════════════════════
 //  PLAN SELECTION
@@ -873,6 +1001,8 @@ function openConnectModal(subUrl) {
 function renderButtons(user) {
   const block = document.getElementById('actions-block');
   block.innerHTML = '';
+
+  if (maintenanceState.enabled && !currentIsAdmin) return;
 
   const st       = user?.status ?? 'NONE';
   const isActive = st === 'ACTIVE';
@@ -951,6 +1081,21 @@ function renderButtons(user) {
   block.appendChild(row2);
   document.getElementById('referral-btn').onclick = () => openReferralModal();
   document.getElementById('promo-btn').onclick    = () => openPromoModal();
+
+  if (currentIsAdmin) {
+    const adminBtn = document.createElement('button');
+    adminBtn.className = 'btn-secondary';
+    adminBtn.innerHTML = `
+      <span class="btn-label">
+        <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2l2.2 4.46 4.92.72-3.56 3.47.84 4.91L10 13.77l-4.4 2.31.84-4.91L2.88 7.18l4.92-.72L10 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>Админ-панель
+      </span>
+      <span class="btn-platform">${maintenanceState.enabled ? 'Тех. работы: вкл' : 'Тех. работы: выкл'}</span>
+    `;
+    adminBtn.onclick = () => openAdminModal();
+    block.appendChild(adminBtn);
+  }
 }
 
 // ════════════════════════════════════════════
@@ -1004,6 +1149,7 @@ async function loadUserData() {
     const isActive = st === 'ACTIVE';
     currentUser = user;
     currentIsAdmin = (user.description || '').toLowerCase().includes('admin');
+    const lockedByMaintenance = await fetchMaintenanceState();
     dot.classList.remove('inactive', 'bad');
     if (!isActive) dot.classList.add(st === 'UNKNOWN' ? 'inactive' : 'bad');
     stxt.textContent = STATUS_RU[st] ?? st.toLowerCase();
@@ -1038,11 +1184,27 @@ async function loadUserData() {
 
     const subUrl = user.subscriptionUrl ?? user.subUrl ?? user.sub_url
                ?? user.subscriptionLink ?? user.subscribeUrl ?? null;
-    if (subUrl) {
+    if (subUrl && !lockedByMaintenance) {
       document.getElementById('sub-key-box').style.display = '';
       document.getElementById('sub-key-val').textContent   = subUrl;
       document.getElementById('copy-sub-key').onclick = () =>
         navigator.clipboard.writeText(subUrl).then(() => showToast('Ключ скопирован ✓'));
+    } else {
+      document.getElementById('sub-key-box').style.display = 'none';
+    }
+
+    if (lockedByMaintenance) {
+      dot.classList.remove('inactive');
+      dot.classList.add('bad');
+      stxt.textContent = 'технические работы';
+      tval.textContent = 'доступ временно ограничен';
+      exp.textContent = getMaintenanceMessage();
+      ps.textContent = 'технические работы';
+      ps.className = 'profile-value bad';
+      document.getElementById('profile-expire').textContent = '—';
+      document.getElementById('profile-traffic').textContent = '—';
+      renderButtons(null);
+      return;
     }
 
     renderButtons(user);
@@ -1073,6 +1235,55 @@ function bindSupportActions() {
   document.getElementById('support-contact-btn').onclick = () => openTg('@' + supportUsername);
   document.getElementById('support-channel-btn').onclick = () => openUrl(channelUrl);
 }
+
+async function openAdminModal() {
+  if (!currentIsAdmin) {
+    showToast('Доступно только администратору');
+    return;
+  }
+
+  setPromoMessage('maintenance-admin-result', '', false);
+  updateMaintenanceAdminUi();
+  openModal('admin-modal');
+  await fetchMaintenanceState();
+}
+
+document.getElementById('maintenance-toggle-btn').onclick = async () => {
+  if (!currentIsAdmin || !tgUser?.id) {
+    setPromoMessage('maintenance-admin-result', 'Недостаточно прав', true);
+    return;
+  }
+
+  setPromoMessage('maintenance-admin-result', 'Сохраняем…', false);
+
+  try {
+    const r = await fetch('/api/maintenance', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: tgUser.id,
+        enabled: !maintenanceState.enabled,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+
+    maintenanceState = {
+      enabled: Boolean(data.enabled),
+      message: getMaintenanceMessage(data),
+    };
+    updateMaintenanceAdminUi(data.updatedAt || '');
+    applyMaintenanceLock();
+    renderButtons(currentUser);
+    setPromoMessage(
+      'maintenance-admin-result',
+      maintenanceState.enabled ? 'Режим техработ включён' : 'Режим техработ выключен',
+      false
+    );
+  } catch (e) {
+    setPromoMessage('maintenance-admin-result', 'Не удалось изменить режим', true);
+  }
+};
 
 // ════════════════════════════════════════════
 //  REFERRAL
