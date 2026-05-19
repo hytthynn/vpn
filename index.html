@@ -704,6 +704,9 @@ function getPlanPeriod(planKey) {
   const months = planKey === '3m' ? 3 : 12;
   return Math.round(getPlanAmount(planKey) / months) + ' ₽/мес';
 }
+function getEntryPlanCtaText() {
+  return 'Купить подписку от ' + fmtMoney(getPlanAmount('1m'));
+}
 function applyRuntimeConfig() {
   document.getElementById('plan-price-1m').textContent = fmtMoney(getPlanAmount('1m'));
   document.getElementById('plan-price-3m').textContent = fmtMoney(getPlanAmount('3m'));
@@ -868,7 +871,7 @@ function renderButtons(user) {
   // ── ПРОДЛИТЬ / КУПИТЬ ──
   const b2 = document.createElement('button');
   b2.className = 'btn-primary';
-  const buyLabel = (user && isActive) ? 'Продлить подписку' : 'Купить подписку от ' + fmtMoney(getPlanAmount('1m'));
+  const buyLabel = (user && isActive) ? 'Продлить подписку' : getEntryPlanCtaText();
   b2.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <polyline points="2,10 8,4 14,10" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>${buyLabel}`;
@@ -912,9 +915,10 @@ function renderButtons(user) {
     </button>
     <button class="btn-half" id="promo-btn">
       <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
-        <path d="M4.5 7.5V5.8a1.8 1.8 0 011.8-1.8h6.3L16 7.4v6.3a1.8 1.8 0 01-1.8 1.8H6.3a1.8 1.8 0 01-1.8-1.8V7.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M12.6 4v3.1H16" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-        <circle cx="8" cy="10" r="1.2" fill="currentColor"/>
+        <path d="M5 6.5a1.5 1.5 0 013-1.1l.5.6.5-.6a1.5 1.5 0 012.3 0l.5.6.5-.6A1.5 1.5 0 0115 6.5V8a2 2 0 010 4v1.5a1.5 1.5 0 01-1.5 1.5H6.5A1.5 1.5 0 015 13.5V12a2 2 0 010-4V6.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M8 7.4l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="8" cy="11.6" r="0.9" fill="currentColor"/>
+        <circle cx="12" cy="7.6" r="0.9" fill="currentColor"/>
       </svg>Промокод
     </button>`;
   block.appendChild(row2);
