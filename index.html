@@ -212,15 +212,15 @@
 
     <div class="plan-card selected" data-plan="1m">
       <div><div class="plan-name">1 месяц</div><div class="plan-desc">Базовый тариф</div></div>
-      <div><div class="plan-price">150 ₽</div><div class="plan-period">в месяц</div></div>
+      <div><div class="plan-price" id="plan-price-1m">150 ₽</div><div class="plan-period" id="plan-period-1m">в месяц</div></div>
     </div>
     <div class="plan-card" data-plan="3m">
       <div><div class="plan-name" style="display:flex;align-items:center;gap:8px">3 месяца <span class="badge">−15%</span></div><div class="plan-desc">Удобный вариант</div></div>
-      <div><div class="plan-price">380 ₽</div><div class="plan-period">127 ₽/мес</div></div>
+      <div><div class="plan-price" id="plan-price-3m">380 ₽</div><div class="plan-period" id="plan-period-3m">127 ₽/мес</div></div>
     </div>
     <div class="plan-card" data-plan="12m">
       <div><div class="plan-name" style="display:flex;align-items:center;gap:8px">12 месяцев <span class="badge">−40%</span></div><div class="plan-desc">Лучшая цена</div></div>
-      <div><div class="plan-price">1 080 ₽</div><div class="plan-period">90 ₽/мес</div></div>
+      <div><div class="plan-price" id="plan-price-12m">1 080 ₽</div><div class="plan-period" id="plan-period-12m">90 ₽/мес</div></div>
     </div>
 
     <div class="pay-info">
@@ -240,7 +240,7 @@
         <rect x="1" y="4" width="14" height="9" rx="2" stroke="#1a1a1a" stroke-width="1.6"/>
         <path d="M1 7h14" stroke="#1a1a1a" stroke-width="1.6"/>
       </svg>
-      Оплатить через ЮMoney
+      Оплатить
     </button>
     <button class="close-btn" id="buy-close">Закрыть</button>
   </div>
@@ -338,11 +338,11 @@
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Поддержка</div>
-    <div class="support-option" onclick="openTg('@hytthynn')">
+    <div class="support-option" id="support-contact-btn">
       <div class="support-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V6z" stroke="#a09e9a" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
       <div><div class="support-title">Написать в поддержку</div><div class="support-desc">Ответим в течение нескольких минут</div></div>
     </div>
-    <div class="support-option" onclick="openUrl('https://t.me/averravpn')">
+    <div class="support-option" id="support-channel-btn">
       <div class="support-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="#a09e9a" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
       <div><div class="support-title">Наш канал</div><div class="support-desc">Новости и обновления</div></div>
     </div>
@@ -474,11 +474,24 @@
 // ════════════════════════════════════════════
 //  CONFIG
 // ════════════════════════════════════════════
-const YOOMONEY_WALLET = '4100118505804569';
-const PLANS_CONFIG = {
-  '1m':  { amount: 2,  label: '1 месяц'    },
-  '3m':  { amount: 2,  label: '3 месяца'   },
-  '12m': { amount: 2, label: '12 месяцев' },
+const DEFAULT_APP_CONFIG = {
+  walletId: '4100118505804569',
+  botUsername: 'averravpnbot',
+  supportUsername: 'hytthynn',
+  channelUrl: 'https://t.me/averravpn',
+  plans: {
+    '1m':  { amount: 150, label: '1 месяц' },
+    '3m':  { amount: 380, label: '3 месяца' },
+    '12m': { amount: 1080, label: '12 месяцев' },
+  },
+};
+let APP_CONFIG = {
+  ...DEFAULT_APP_CONFIG,
+  plans: {
+    '1m': { ...DEFAULT_APP_CONFIG.plans['1m'] },
+    '3m': { ...DEFAULT_APP_CONFIG.plans['3m'] },
+    '12m': { ...DEFAULT_APP_CONFIG.plans['12m'] },
+  },
 };
 const HAPP_LINKS = {
   ios:     'https://apps.apple.com/app/happ-proxy-utility/id6504287215',
@@ -511,6 +524,28 @@ try {
 // Загружаем конфиг из env (squad uuid и др.)
 fetch('/api/config').then(r => r.json()).then(cfg => {
   DEFAULT_SQUAD_UUID = cfg.defaultSquadUuid || '';
+  APP_CONFIG = {
+    ...APP_CONFIG,
+    walletId: cfg.walletId || APP_CONFIG.walletId,
+    botUsername: cfg.botUsername || APP_CONFIG.botUsername,
+    supportUsername: cfg.supportUsername || APP_CONFIG.supportUsername,
+    channelUrl: cfg.channelUrl || APP_CONFIG.channelUrl,
+    plans: {
+      '1m': {
+        ...APP_CONFIG.plans['1m'],
+        amount: getPositiveNumber(cfg?.plans?.['1m']?.amount, APP_CONFIG.plans['1m'].amount),
+      },
+      '3m': {
+        ...APP_CONFIG.plans['3m'],
+        amount: getPositiveNumber(cfg?.plans?.['3m']?.amount, APP_CONFIG.plans['3m'].amount),
+      },
+      '12m': {
+        ...APP_CONFIG.plans['12m'],
+        amount: getPositiveNumber(cfg?.plans?.['12m']?.amount, APP_CONFIG.plans['12m'].amount),
+      },
+    },
+  };
+  applyRuntimeConfig();
 }).catch(() => {});
 
 if (tg) {
@@ -657,6 +692,29 @@ function fmtMoney(amount) {
   const n = Number(amount);
   return Number.isFinite(n) ? n.toLocaleString('ru-RU') + ' ₽' : '—';
 }
+function getPositiveNumber(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+function getPlanAmount(planKey) {
+  return getPositiveNumber(APP_CONFIG?.plans?.[planKey]?.amount, DEFAULT_APP_CONFIG.plans[planKey].amount);
+}
+function getPlanPeriod(planKey) {
+  if (planKey === '1m') return 'в месяц';
+  const months = planKey === '3m' ? 3 : 12;
+  return Math.round(getPlanAmount(planKey) / months) + ' ₽/мес';
+}
+function applyRuntimeConfig() {
+  document.getElementById('plan-price-1m').textContent = fmtMoney(getPlanAmount('1m'));
+  document.getElementById('plan-price-3m').textContent = fmtMoney(getPlanAmount('3m'));
+  document.getElementById('plan-price-12m').textContent = fmtMoney(getPlanAmount('12m'));
+  document.getElementById('plan-period-1m').textContent = getPlanPeriod('1m');
+  document.getElementById('plan-period-3m').textContent = getPlanPeriod('3m');
+  document.getElementById('plan-period-12m').textContent = getPlanPeriod('12m');
+  bindSupportActions();
+  updatePaySummary();
+  renderButtons(currentUser);
+}
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -702,14 +760,14 @@ function renderTransactions(description = '') {
 //  PAYMENT URL
 // ════════════════════════════════════════════
 function buildPaymentUrl(tgId, planKey) {
-  const plan = PLANS_CONFIG[planKey];
+  const plan = APP_CONFIG.plans[planKey];
   if (!plan) return null;
   const params = new URLSearchParams({
-    receiver:        YOOMONEY_WALLET,
+    receiver:        APP_CONFIG.walletId,
     'quickpay-form': 'donate',
     targets:         'Averra VPN — ' + plan.label,
     paymentType:     'AC',
-    sum:             plan.amount,
+    sum:             String(getPlanAmount(planKey)),
     label:           'averra_' + tgId + '_' + planKey,
     successURL:      window.location.href,
   });
@@ -736,7 +794,7 @@ document.getElementById('promo-close').onclick    = () => closeModal('promo-moda
 // ════════════════════════════════════════════
 let selectedPlan = '1m';
 function updatePaySummary() {
-  document.getElementById('pay-summary-amount').textContent = PLANS_CONFIG[selectedPlan].amount + ' ₽';
+  document.getElementById('pay-summary-amount').textContent = fmtMoney(getPlanAmount(selectedPlan));
 }
 document.querySelectorAll('.plan-card').forEach(card => {
   card.addEventListener('click', () => {
@@ -810,7 +868,7 @@ function renderButtons(user) {
   // ── ПРОДЛИТЬ / КУПИТЬ ──
   const b2 = document.createElement('button');
   b2.className = 'btn-primary';
-  const buyLabel = (user && isActive) ? 'Продлить подписку' : 'Купить подписку от 150 ₽';
+  const buyLabel = (user && isActive) ? 'Продлить подписку' : 'Купить подписку от ' + fmtMoney(getPlanAmount('1m'));
   b2.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <polyline points="2,10 8,4 14,10" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>${buyLabel}`;
@@ -854,8 +912,9 @@ function renderButtons(user) {
     </button>
     <button class="btn-half" id="promo-btn">
       <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
-        <path d="M4 7.5L9 2.5a2.121 2.121 0 013 3l-1 1h5a2 2 0 012 2v2.5a2 2 0 01-2 2h-5l1 1a2.121 2.121 0 01-3 3l-5-5a2.121 2.121 0 010-3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="13.5" cy="9.5" r="0.8" fill="currentColor"/>
+        <path d="M4.5 7.5V5.8a1.8 1.8 0 011.8-1.8h6.3L16 7.4v6.3a1.8 1.8 0 01-1.8 1.8H6.3a1.8 1.8 0 01-1.8-1.8V7.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M12.6 4v3.1H16" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <circle cx="8" cy="10" r="1.2" fill="currentColor"/>
       </svg>Промокод
     </button>`;
   block.appendChild(row2);
@@ -974,6 +1033,12 @@ function openTg(h) {
 function openUrl(url) {
   if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
 }
+function bindSupportActions() {
+  const supportUsername = String(APP_CONFIG.supportUsername || DEFAULT_APP_CONFIG.supportUsername).replace('@', '');
+  const channelUrl = APP_CONFIG.channelUrl || DEFAULT_APP_CONFIG.channelUrl;
+  document.getElementById('support-contact-btn').onclick = () => openTg('@' + supportUsername);
+  document.getElementById('support-channel-btn').onclick = () => openUrl(channelUrl);
+}
 
 // ════════════════════════════════════════════
 //  REFERRAL
@@ -981,7 +1046,7 @@ function openUrl(url) {
 async function openReferralModal() {
   const tgId = tgUser?.id;
   const refLink = tgId
-    ? 'https://t.me/averravpnbot/app?startapp=ref_' + tgId
+    ? 'https://t.me/' + APP_CONFIG.botUsername + '/app?startapp=ref_' + tgId
     : '—';
 
   document.getElementById('ref-link-val').textContent = refLink;
@@ -1304,6 +1369,8 @@ function injectTermsButton() {
 }
 
 injectTermsButton();
+bindSupportActions();
+applyRuntimeConfig();
 
 loadUserData();
 </script>
