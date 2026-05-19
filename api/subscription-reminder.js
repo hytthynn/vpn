@@ -79,13 +79,13 @@ function buildOpenAppButton(req) {
 
   if (isTelegramMiniAppUrl(targetUrl)) {
     return {
-      text: 'Открыть приложение',
+      text: '📲 Открыть приложение',
       url: targetUrl,
     };
   }
 
   return {
-    text: 'Открыть приложение',
+    text: '📲 Открыть приложение',
     web_app: { url: targetUrl },
   };
 }
@@ -115,9 +115,7 @@ async function sendReminder(req, user) {
     : 'Если нужна помощь, напишите в поддержку.';
 
   const text =
-`<b>${escapeHtml(BRAND_NAME)}</b>
-
-⏳ <b>Подписка скоро закончится</b>
+`⏳ <b>Подписка скоро закончится</b>
 
 Доступ активен до: <b>${escapeHtml(formatExpireDate(user.expireAt))}</b>
 
