@@ -30,7 +30,7 @@
     .app-loader-card { width: min(100%, 320px); display: flex; flex-direction: column; align-items: center; text-align: center; }
     .app-loader-logo { position: relative; width: 124px; height: 124px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
     .app-loader-logo::before { content: ''; position: absolute; inset: -12px; border-radius: 50%; background: radial-gradient(circle, rgba(94,194,106,.2) 0%, rgba(94,194,106,0) 70%); animation: loaderGlow 2.6s ease-in-out infinite; }
-    .app-loader-orb { position: absolute; inset: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.2), rgba(255,255,255,0) 28%), linear-gradient(180deg, #7dd48a 0%, #3aaa4e 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 16px 34px rgba(94,194,106,.18); animation: loaderFloat 2.6s ease-in-out infinite; }
+    .app-loader-image { position: absolute; inset: 14px; width: calc(100% - 28px); height: calc(100% - 28px); object-fit: contain; filter: drop-shadow(0 14px 24px rgba(94,194,106,.22)); animation: loaderFloat 2.6s ease-in-out infinite; }
     .app-loader-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.08); }
     .app-loader-ring::before { content: ''; position: absolute; inset: -1px; border-radius: 50%; border: 2px solid transparent; border-top-color: rgba(255,255,255,.88); border-right-color: rgba(94,194,106,.75); animation: loaderSpin 1.15s linear infinite; }
     .app-loader-brand { font-size: 28px; font-weight: 300; letter-spacing: 6px; color: var(--text); opacity: .95; }
@@ -52,6 +52,7 @@
     @keyframes loaderSweep { 0% { transform: translateX(-120%); } 100% { transform: translateX(360%); } }
     @keyframes loaderDot { 0%,80%,100%{ transform:translateY(0); opacity:.35; } 40%{ transform:translateY(-4px); opacity:1; } }
     .logo-floater { animation: float 5s ease-in-out infinite; filter: drop-shadow(0 16px 36px rgba(94,194,106,.28)) drop-shadow(0 4px 12px rgba(0,0,0,.7)); }
+    .brand-logo { width: 160px; height: 160px; object-fit: contain; display: block; }
     .logo-bg-glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle at 50% 65%, rgba(94,194,106,.18) 0%, transparent 68%); animation: glowPulse 4s ease-in-out infinite; pointer-events: none; }
     .brand-name { font-size: 28px; font-weight: 300; letter-spacing: 5px; color: var(--text); margin-bottom: 6px; opacity: 0.92; }
     .greeting { font-size: 14px; color: var(--text2); margin-bottom: 28px; }
@@ -184,7 +185,7 @@
 <div class="app-loader" id="app-loader" aria-hidden="true">
   <div class="app-loader-card">
     <div class="app-loader-logo">
-      <div class="app-loader-orb"></div>
+      <img class="app-loader-image" src="/logo.png" alt="averra logo" />
       <div class="app-loader-ring"></div>
     </div>
     <div class="app-loader-brand">averra</div>
@@ -198,27 +199,7 @@
   <div class="logo-wrap">
     <div class="logo-bg-glow"></div>
     <div class="logo-floater">
-      <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="lLeft" x1="40" y1="40" x2="82" y2="148" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#9de8a8"/><stop offset="100%" stop-color="#2a7a38"/></linearGradient>
-          <linearGradient id="lRight" x1="120" y1="40" x2="78" y2="148" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#7dd48a"/><stop offset="100%" stop-color="#1a5a26"/></linearGradient>
-          <linearGradient id="lTop" x1="60" y1="28" x2="100" y2="28" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#b8f0c0"/><stop offset="50%" stop-color="#eafff0"/><stop offset="100%" stop-color="#b8f0c0"/></linearGradient>
-          <linearGradient id="lArch" x1="46" y1="138" x2="114" y2="138" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#2e8c3e"/><stop offset="50%" stop-color="#3aaa4e"/><stop offset="100%" stop-color="#2e8c3e"/></linearGradient>
-          <linearGradient id="lArchTop" x1="46" y1="118" x2="114" y2="118" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#5ec26a"/><stop offset="50%" stop-color="#90e89a"/><stop offset="100%" stop-color="#5ec26a"/></linearGradient>
-          <radialGradient id="lGlow" cx="50%" cy="62%" r="48%"><stop offset="0%" stop-color="#5ec26a" stop-opacity=".22"/><stop offset="100%" stop-color="#5ec26a" stop-opacity="0"/></radialGradient>
-        </defs>
-        <ellipse cx="80" cy="124" rx="70" ry="32" fill="url(#lGlow)"/>
-        <path d="M 46 148 C 34 148, 28 141, 28 132 C 28 124, 34 117, 42 114 L 74 46 C 78 35, 84 30, 80 30 C 76 30, 82 35, 86 46 L 62 114 C 56 128, 50 140, 46 148 Z" fill="url(#lLeft)"/>
-        <path d="M 114 148 C 126 148, 132 141, 132 132 C 132 124, 126 117, 118 114 L 86 46 C 82 35, 78 30, 80 30 C 84 30, 78 35, 74 46 L 98 114 C 104 128, 110 140, 114 148 Z" fill="url(#lRight)"/>
-        <path d="M 74 46 C 76 36, 78 30, 80 30 C 82 30, 84 36, 86 46 C 84 40, 82 36, 80 36 C 78 36, 76 40, 74 46 Z" fill="url(#lTop)"/>
-        <path d="M 46 132 C 50 144, 63 152, 80 152 C 97 152, 110 144, 114 132 C 110 140, 97 146, 80 146 C 63 146, 50 140, 46 132 Z" fill="url(#lArch)"/>
-        <path d="M 50 122 C 56 112, 67 106, 80 106 C 93 106, 104 112, 110 122 C 110 132, 97 140, 80 140 C 63 140, 50 132, 50 122 Z" fill="url(#lArchTop)"/>
-        <path d="M 62 120 C 65 113, 72 109, 80 109 C 88 109, 95 113, 98 120 C 95 127, 88 131, 80 131 C 72 131, 65 127, 62 120 Z" fill="#2b2b2b"/>
-        <path d="M 76 44 C 77 37, 78.5 32, 80 32 C 81.5 32, 83 37, 84 44 C 83 39, 81.5 36, 80 36 C 78.5 36, 77 39, 76 44 Z" fill="white" opacity=".55"/>
-        <path d="M 42 116 L 50 96 L 54 104 L 46 124 Z" fill="white" opacity=".1"/>
-        <path d="M 118 116 L 110 96 L 106 104 L 114 124 Z" fill="white" opacity=".06"/>
-        <path d="M 58 118 C 63 112, 71 108, 80 108 C 89 108, 97 112, 102 118 C 97 114, 89 111, 80 111 C 71 111, 63 114, 58 118 Z" fill="white" opacity=".18"/>
-      </svg>
+      <img class="brand-logo" src="/logo.png" alt="averra logo" />
     </div>
   </div>
   <div class="brand-name">averra</div>
@@ -965,9 +946,9 @@ function renderButtons(user) {
     </button>
     <button class="btn-half" id="promo-btn">
       <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
-        <path d="M5 6.5A1.5 1.5 0 016.5 5h7A1.5 1.5 0 0115 6.5V8a1.75 1.75 0 010 3.5v1A1.5 1.5 0 0113.5 14h-7A1.5 1.5 0 015 12.5v-1a1.75 1.75 0 010-3.5V6.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M9.9 6.7v6.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1.8 1.8"/>
-        <path d="M8 8.2h.01M11.9 11.8h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M4.5 7.4a1.9 1.9 0 011.9-1.9h7.2a1.9 1.9 0 011.9 1.9v1.1a1.7 1.7 0 010 3.4v1.1a1.9 1.9 0 01-1.9 1.9H6.4a1.9 1.9 0 01-1.9-1.9v-1.1a1.7 1.7 0 010-3.4V7.4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M10 6.2v7.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1.6 1.8"/>
+        <path d="M7.2 8.3l5.6 3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>Промокод
     </button>`;
   block.appendChild(row2);
