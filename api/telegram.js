@@ -62,6 +62,14 @@ function buildOpenAppButton(req, startPayload) {
   };
 }
 
+function buildSupportButton() {
+  if (!SUPPORT_USERNAME) return null;
+  return {
+    text: '💬 Связаться с поддержкой',
+    url: `https://t.me/${SUPPORT_USERNAME}`,
+  };
+}
+
 async function telegramRequest(method, payload) {
   if (!TELEGRAM_BOT_TOKEN) {
     throw new Error('TELEGRAM_BOT_TOKEN env var is not set');
@@ -115,6 +123,24 @@ ${supportLine}`;
   });
 }
 
+async function sendUnknownMessage(message) {
+  const text = `Извините, я не совсем понял ваш запрос 😔
+
+Напишите в поддержку, мы обязательно поможем`;
+
+  const supportButton = buildSupportButton();
+  const replyMarkup = supportButton
+    ? { inline_keyboard: [[supportButton]] }
+    : undefined;
+
+  await telegramRequest('sendMessage', {
+    chat_id: message.chat.id,
+    text,
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    disable_web_page_preview: true,
+  });
+}
+
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
@@ -138,9 +164,16 @@ export default async function handler(req) {
     const message = update.message || update.edited_message;
     const text = String(message?.text || '');
 
-    if (/^\/start(?:@\w+)?(?:\s+.*)?$/i.test(text) && message?.chat?.id) {
-      await sendStartMessage(req, message);
+    if (!message?.chat?.id || message?.from?.is_bot) {
+      return json({ ok: true });
     }
+
+    if (/^\/start(?:@\w+)?(?:\s+.*)?$/i.test(text)) {
+      await sendStartMessage(req, message);
+      return json({ ok: true });
+    }
+
+    await sendUnknownMessage(message);
 
     return json({ ok: true });
   } catch (error) {

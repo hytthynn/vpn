@@ -110,18 +110,12 @@ async function telegramRequest(method, payload) {
 }
 
 async function sendReminder(req, user) {
-  const supportLine = SUPPORT_USERNAME
-    ? `Если нужна помощь, напишите в поддержку: @${SUPPORT_USERNAME}`
-    : 'Если нужна помощь, напишите в поддержку.';
-
   const text =
 `⏳ <b>Подписка скоро закончится</b>
 
 Доступ активен до: <b>${escapeHtml(formatExpireDate(user.expireAt))}</b>
 
-Продлите подписку заранее, чтобы пользоваться VPN без перерыва.
-
-${escapeHtml(supportLine)}`;
+Продлите подписку заранее, чтобы пользоваться VPN без перерыва.`;
 
   await telegramRequest('sendMessage', {
     chat_id: Number(user.telegramId ?? user.tgId ?? user.telegram_id),
