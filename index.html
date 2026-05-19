@@ -645,6 +645,7 @@ async function findUser(tgId) {
 }
 
 async function createUser(tgId, tgName) {
+  const TRIAL_DAYS = 3;
   // Формируем допустимый username
   const clean = (tgName || '').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').slice(0, 24).replace(/^_|_$/g, '');
   const suffix = String(tgId).slice(-5);
@@ -653,12 +654,12 @@ async function createUser(tgId, tgName) {
   // description: сохраняем ID реферера чтобы webhook мог начислить бонус
   const description = REF_INVITER_ID ? 'ref:' + REF_INVITER_ID : '';
 
-  const expireAt = new Date().toISOString();
+  const expireAt = new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString();
   const d = await proxyPost('/api/users', {
     username,
     telegramId: Number(tgId),
     expireAt,
-    status: 'EXPIRED',
+    status: 'ACTIVE',
     trafficLimitBytes: 0,
     trafficLimitStrategy: 'NO_RESET',
     ...(description ? { description } : {}),
