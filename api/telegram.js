@@ -29,12 +29,37 @@ function normalizeUrl(url = '') {
   return String(url).trim().replace(/\/+$/, '');
 }
 
+function appendStartPayload(urlString, startPayload) {
+  const url = new URL(urlString);
+  if (startPayload) url.searchParams.set('startapp', startPayload);
+  return url.toString();
+}
+
+function isTelegramMiniAppUrl(url = '') {
+  return /^https:\/\/t\.me\/[^/]+\/app(?:[/?#]|$)/i.test(String(url).trim());
+}
+
 function buildWebAppUrl(req, startPayload) {
   const explicitUrl = normalizeUrl(process.env.WEBAPP_URL);
   const baseUrl = explicitUrl || new URL(req.url).origin;
-  const url = new URL(baseUrl + '/');
-  if (startPayload) url.searchParams.set('startapp', startPayload);
-  return url.toString();
+  return appendStartPayload(baseUrl + '/', startPayload);
+}
+
+function buildOpenAppButton(req, startPayload) {
+  const explicitUrl = normalizeUrl(process.env.WEBAPP_URL);
+  const targetUrl = explicitUrl ? appendStartPayload(explicitUrl, startPayload) : buildWebAppUrl(req, startPayload);
+
+  if (isTelegramMiniAppUrl(targetUrl)) {
+    return {
+      text: '🪟 Открыть приложение',
+      url: targetUrl,
+    };
+  }
+
+  return {
+    text: '🪟 Открыть приложение',
+    web_app: { url: targetUrl },
+  };
 }
 
 async function telegramRequest(method, payload) {
@@ -77,12 +102,7 @@ ${supportLine}`;
 
   const keyboard = {
     inline_keyboard: [
-      [
-        {
-          text: '🪟 Открыть приложение',
-          web_app: { url: buildWebAppUrl(req, startPayload) },
-        },
-      ],
+      [buildOpenAppButton(req, startPayload)],
       ...(CHANNEL_URL ? [[{ text: `🌐 Новостной канал ${BRAND_NAME}`, url: CHANNEL_URL }]] : []),
     ],
   };
