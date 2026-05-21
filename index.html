@@ -530,8 +530,8 @@
     <div class="modal-handle"></div>
     <div class="modal-title">Подключение к VPN</div>
 
-    <div class="sub-key-box" id="connect-url-box" style="margin-bottom:16px;display:none">
-      <div class="sub-key-label" id="connect-url-label">Зашифрованная ссылка happ</div>
+    <div class="sub-key-box" style="margin-bottom:16px">
+      <div class="sub-key-label">Ссылка подписки</div>
       <div class="sub-key-row">
         <div class="sub-key-val" id="connect-url-val">—</div>
         <button class="copy-btn" id="copy-connect-url">Копировать</button>
@@ -540,15 +540,15 @@
 
     <div class="connect-step">
       <div class="connect-step-num">1</div>
-      <div class="connect-step-text" id="connect-step-1">Если happ не установлен, сначала скачайте приложение для вашего устройства.</div>
+      <div class="connect-step-text">Нажмите <b>«Открыть в happ»</b> — подписка добавится автоматически</div>
     </div>
     <div class="connect-step">
       <div class="connect-step-num">2</div>
-      <div class="connect-step-text" id="connect-step-2">Нажмите <b>«Добавить подписку в happ»</b> — откроется зашифрованная ссылка.</div>
+      <div class="connect-step-text">Нажмите <b>«Подключиться»</b> в happ — готово!</div>
     </div>
     <div class="connect-step" style="margin-bottom:16px">
-      <div class="connect-step-num">3</div>
-      <div class="connect-step-text" id="connect-step-3">После импорта профиля откройте happ и нажмите <b>«Подключиться»</b>.</div>
+      <div class="connect-step-num">?</div>
+      <div class="connect-step-text">Если happ не установлен — сначала нажмите <b>«Скачать happ»</b></div>
     </div>
 
     <button class="btn-primary btn-green" id="open-happ-btn" style="margin-bottom:10px">
@@ -556,7 +556,7 @@
         <circle cx="10" cy="10" r="8" stroke="#0d2e12" stroke-width="1.8"/>
         <path d="M7 10l2 2 4-4" stroke="#0d2e12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      Добавить подписку в happ
+      Открыть в happ
     </button>
     <button class="btn-secondary" id="install-happ-btn" style="margin-bottom:4px">
       <span class="btn-label">
@@ -601,7 +601,7 @@
       <div class="transactions-list" id="profile-transactions"></div>
     </div>
     <div class="sub-key-box" id="sub-key-box" style="display:none">
-      <div class="sub-key-label">Зашифрованный ключ happ</div>
+      <div class="sub-key-label">Ключ подписки</div>
       <div class="sub-key-row">
         <div class="sub-key-val" id="sub-key-val">—</div>
         <button class="copy-btn" id="copy-sub-key">Копировать</button>
@@ -635,7 +635,19 @@
     <div class="modal-title" id="trial-modal-title">Получить 3 дня бесплатно</div>
 
     <div class="ref-desc" id="trial-modal-desc">
-      Подпишитесь на новостной канал averra через кнопку «Наш канал», затем вернитесь сюда и подтвердите подписку. После проверки мы сразу начислим вам 3 дня доступа.
+      Подпишитесь на новостной канал averra и подтвердите подписку. После проверки мы сразу начислим вам 3 дня доступа.
+    </div>
+
+    <div class="support-option" id="trial-channel-card">
+      <div class="support-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="#a09e9a" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="support-title">Новостной канал</div>
+        <div class="support-desc">Подпишитесь, затем вернитесь и подтвердите подписку</div>
+      </div>
     </div>
 
     <div class="promo-result" id="trial-result"></div>
@@ -645,7 +657,7 @@
         <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
           <path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
         </svg>
-        Новостной канал
+        Подписаться на канал
       </span>
       <span class="btn-platform">Telegram</span>
     </button>
@@ -863,47 +875,13 @@ let APP_CONFIG = {
   },
 };
 const HAPP_LINKS = {
-  ios: {
-    url: 'https://apps.apple.com/us/app/happ-proxy-utility/id6504287215',
-    source: 'App Store',
-  },
-  android: {
-    url: 'https://play.google.com/store/apps/details?id=com.happproxy',
-    source: 'Google Play',
-  },
-  macos: {
-    url: 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/Happ.macOS.universal.dmg',
-    source: 'macOS dmg',
-  },
-  windows: {
-    url: 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/setup-Happ.x64.exe',
-    source: 'Windows x64',
-  },
+  ios:     'https://apps.apple.com/app/happ-proxy-utility/id6504287215',
+  android: 'https://happ.su/download',
+  macos:   'https://happ.su/download',
+  windows: 'https://happ.su/download',
 };
 const OS_LABELS = { windows:'Windows', macos:'macOS', android:'Android', ios:'iOS' };
 const STATUS_RU = { ACTIVE:'активен', EXPIRED:'истёк', DISABLED:'отключён', LIMITED:'лимит трафика' };
-const CONNECT_GUIDES = {
-  ios: {
-    installStep: 'Если happ ещё не установлен, скачайте его из App Store.',
-    importStep: 'Нажмите «Добавить подписку в happ» и подтвердите открытие зашифрованной ссылки.',
-    finishStep: 'В happ подтвердите импорт профиля и нажмите «Подключиться».',
-  },
-  android: {
-    installStep: 'Если happ ещё не установлен, скачайте его из Google Play.',
-    importStep: 'Нажмите «Добавить подписку в happ» и разрешите открытие зашифрованной ссылки.',
-    finishStep: 'После импорта профиля откройте happ и нажмите «Подключиться».',
-  },
-  macos: {
-    installStep: 'Если happ ещё не установлен, скачайте приложение для macOS и установите его.',
-    importStep: 'Нажмите «Добавить подписку в happ» — happ откроет зашифрованную ссылку автоматически.',
-    finishStep: 'Выберите импортированный профиль в happ и нажмите «Подключиться».',
-  },
-  windows: {
-    installStep: 'Если happ ещё не установлен, скачайте версию для Windows x64 и завершите установку.',
-    importStep: 'Нажмите «Добавить подписку в happ» — happ откроет зашифрованную ссылку автоматически.',
-    finishStep: 'Выберите импортированный профиль в happ и нажмите «Подключиться».',
-  },
-};
 
 // ════════════════════════════════════════════
 //  TELEGRAM
@@ -916,7 +894,6 @@ let currentIsAdmin = false;
 let maintenanceState = { enabled: false, message: 'Сервис временно недоступен. Пожалуйста, попробуйте позже.' };
 let broadcastImageDataUrl = '';
 let broadcastImageName = '';
-const happLinkCache = new Map();
 const DEFAULT_MAINTENANCE_MESSAGE = 'Сервис временно недоступен. Пожалуйста, попробуйте позже.';
 const MAX_BROADCAST_IMAGE_BYTES = 8 * 1024 * 1024;
 const APP_BOOT_MIN_MS = 900;
@@ -1315,73 +1292,8 @@ function getUserDescription(user) {
   return String(user?.description || '');
 }
 
-function getUserSubscriptionUrl(user) {
-  return user
-    ? (user.subscriptionUrl ?? user.subUrl ?? user.sub_url ?? user.subscriptionLink ?? user.subscribeUrl ?? null)
-    : null;
-}
-
 function hasAvailableTrial(user) {
   return /(?:^|\s)trial_status:available(?:\s|$)/.test(getUserDescription(user));
-}
-
-function openAppLink(url) {
-  if (!url) return;
-  if (/^happ:\/\//i.test(url)) {
-    // Custom schemes usually do not work via tg.openLink inside Telegram WebView.
-    try {
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
-      setTimeout(() => iframe.remove(), 1200);
-    } catch (_) {}
-
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => link.remove(), 0);
-    } catch (_) {}
-
-    try {
-      window.location.href = url;
-    } catch (_) {}
-    return;
-  }
-
-  if (tg && tg.openLink) tg.openLink(url);
-  else window.open(url, '_blank');
-}
-
-async function getEncryptedHappLink(sourceUrl) {
-  const cleanUrl = String(sourceUrl || '').trim();
-  if (!cleanUrl) return '';
-
-  if (/^happ:\/\/crypt\d+\//i.test(cleanUrl)) return cleanUrl;
-  if (happLinkCache.has(cleanUrl)) return happLinkCache.get(cleanUrl);
-
-  const pending = fetch('/api/happ-link', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url: cleanUrl }),
-  })
-    .then(async (response) => {
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.encryptedLink) {
-        throw new Error(data?.error || ('HTTP ' + response.status));
-      }
-      return String(data.encryptedLink);
-    })
-    .catch((error) => {
-      happLinkCache.delete(cleanUrl);
-      throw error;
-    });
-
-  happLinkCache.set(cleanUrl, pending);
-  return pending;
 }
 
 // ════════════════════════════════════════════
@@ -1581,40 +1493,26 @@ document.getElementById('pay-btn').onclick = () => {
 // ════════════════════════════════════════════
 //  CONNECT MODAL
 // ════════════════════════════════════════════
-async function openConnectModal(user) {
-  const subUrl = getUserSubscriptionUrl(user);
-  if (!subUrl) {
-    showToast('Ссылка подписки пока недоступна');
-    return;
-  }
+function openConnectModal(subUrl) {
+  document.getElementById('connect-url-val').textContent = subUrl;
+  document.getElementById('connect-os-label').textContent = OS_LABELS[detectedOS];
 
-  const guide = CONNECT_GUIDES[detectedOS] || CONNECT_GUIDES.windows;
-  const installTarget = HAPP_LINKS[detectedOS] || HAPP_LINKS.windows;
+  document.getElementById('copy-connect-url').onclick = () =>
+    navigator.clipboard.writeText(subUrl).then(() => showToast('Ссылка скопирована ✓'));
 
-  document.getElementById('connect-url-box').style.display = 'none';
-  document.getElementById('connect-step-1').innerHTML = guide.installStep;
-  document.getElementById('connect-step-2').innerHTML = guide.importStep;
-  document.getElementById('connect-step-3').innerHTML = guide.finishStep;
-  document.getElementById('connect-os-label').textContent = installTarget.source || OS_LABELS[detectedOS];
-  document.getElementById('open-happ-btn').disabled = true;
+  document.getElementById('open-happ-btn').onclick = () => {
+    // Deep link: happ открывает и добавляет подписку автоматически
+    const happUrl = 'happ://install?url=' + encodeURIComponent(subUrl);
+    if (tg && tg.openLink) tg.openLink(happUrl);
+    else window.location.href = happUrl;
+  };
 
   document.getElementById('install-happ-btn').onclick = () => {
-    openUrl(installTarget.url);
+    const link = HAPP_LINKS[detectedOS];
+    if (tg && tg.openLink) tg.openLink(link); else window.open(link, '_blank');
   };
 
   openModal('connect-modal');
-
-  try {
-    const encryptedLink = await getEncryptedHappLink(subUrl);
-    document.getElementById('open-happ-btn').disabled = false;
-
-    document.getElementById('open-happ-btn').onclick = () => {
-      openAppLink(encryptedLink);
-    };
-  } catch (error) {
-    document.getElementById('open-happ-btn').disabled = true;
-    showToast('Ошибка подготовки ссылки happ');
-  }
 }
 
 // ════════════════════════════════════════════
@@ -1629,7 +1527,9 @@ function renderButtons(user) {
   const st       = user?.status ?? 'NONE';
   const isActive = st === 'ACTIVE';
   const canClaimTrial = user && !isActive && hasAvailableTrial(user);
-  const subUrl   = getUserSubscriptionUrl(user);
+  const subUrl   = user
+    ? (user.subscriptionUrl ?? user.subUrl ?? user.sub_url ?? user.subscriptionLink ?? user.subscribeUrl ?? null)
+    : null;
 
   // ── ПОДКЛЮЧИТЬ — только если активная подписка и есть ссылка ──
   if (isActive && subUrl) {
@@ -1639,7 +1539,10 @@ function renderButtons(user) {
       <circle cx="10" cy="10" r="8" stroke="#0d2e12" stroke-width="1.8"/>
       <path d="M7 10l2 2 4-4" stroke="#0d2e12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>Подключить`;
-    b.onclick = () => openConnectModal(user);
+    b.onclick = () => {
+      if (tg && tg.openLink) tg.openLink(subUrl);
+      else window.open(subUrl, '_blank');
+    };
     block.appendChild(b);
   }
 
@@ -1810,21 +1713,13 @@ async function loadUserData() {
     document.getElementById('profile-traffic').textContent = tStr;
     renderTransactions(user.description || '');
 
-    const subUrl = getUserSubscriptionUrl(user);
+    const subUrl = user.subscriptionUrl ?? user.subUrl ?? user.sub_url
+               ?? user.subscriptionLink ?? user.subscribeUrl ?? null;
     if (subUrl && !lockedByMaintenance) {
       document.getElementById('sub-key-box').style.display = '';
-      document.getElementById('sub-key-val').textContent   = 'Подготавливаем защищенную ссылку…';
-      document.getElementById('copy-sub-key').disabled = true;
-      try {
-        const encryptedLink = await getEncryptedHappLink(subUrl);
-        document.getElementById('sub-key-val').textContent = encryptedLink;
-        document.getElementById('copy-sub-key').disabled = false;
-        document.getElementById('copy-sub-key').onclick = () =>
-          navigator.clipboard.writeText(encryptedLink).then(() => showToast('Ключ скопирован ✓'));
-      } catch (_) {
-        document.getElementById('sub-key-val').textContent = 'Не удалось загрузить зашифрованный ключ happ';
-        document.getElementById('copy-sub-key').disabled = true;
-      }
+      document.getElementById('sub-key-val').textContent   = subUrl;
+      document.getElementById('copy-sub-key').onclick = () =>
+        navigator.clipboard.writeText(subUrl).then(() => showToast('Ключ скопирован ✓'));
     } else {
       document.getElementById('sub-key-box').style.display = 'none';
     }
@@ -1886,7 +1781,7 @@ function setTrialMessage(text, isError) {
 function openTrialModal() {
   const days = getTrialDays();
   document.getElementById('trial-modal-title').textContent = `Получить ${days} дня бесплатно`;
-  document.getElementById('trial-modal-desc').textContent = `Подпишитесь на новостной канал averra, затем вернитесь сюда и подтвердите подписку. После проверки мы сразу начислим вам ${days} дня доступа.`;
+  document.getElementById('trial-modal-desc').textContent = `Подпишитесь на новостной канал averra и подтвердите подписку. После проверки мы сразу начислим вам ${days} дня доступа.`;
   document.getElementById('trial-claim-btn').innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <polyline points="2,8 6,12 14,4" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>Проверить подписку и получить ${days} дня`;
@@ -1904,6 +1799,10 @@ document.getElementById('trial-channel-btn').onclick = () => {
 
   openUrl(channelUrl);
   setTrialMessage('Подпишитесь на канал, затем вернитесь и подтвердите подписку', false);
+};
+
+document.getElementById('trial-channel-card').onclick = () => {
+  document.getElementById('trial-channel-btn').click();
 };
 
 document.getElementById('trial-claim-btn').onclick = async () => {
