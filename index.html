@@ -530,7 +530,7 @@
     <div class="modal-handle"></div>
     <div class="modal-title">Подключение к VPN</div>
 
-    <div class="sub-key-box" style="margin-bottom:16px">
+    <div class="sub-key-box" id="connect-url-box" style="margin-bottom:16px;display:none">
       <div class="sub-key-label" id="connect-url-label">Зашифрованная ссылка happ</div>
       <div class="sub-key-row">
         <div class="sub-key-val" id="connect-url-val">—</div>
@@ -639,6 +639,16 @@
     </div>
 
     <div class="promo-result" id="trial-result"></div>
+
+    <button class="btn-secondary" id="trial-channel-btn" style="margin-bottom:10px">
+      <span class="btn-label">
+        <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        Новостной канал
+      </span>
+      <span class="btn-platform">Telegram</span>
+    </button>
 
     <button class="btn-primary" id="trial-claim-btn" style="margin-bottom:10px">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -1317,8 +1327,32 @@ function hasAvailableTrial(user) {
 
 function openAppLink(url) {
   if (!url) return;
+  if (/^happ:\/\//i.test(url)) {
+    // Custom schemes usually do not work via tg.openLink inside Telegram WebView.
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      setTimeout(() => iframe.remove(), 1200);
+    } catch (_) {}
+
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => link.remove(), 0);
+    } catch (_) {}
+
+    try {
+      window.location.href = url;
+    } catch (_) {}
+    return;
+  }
+
   if (tg && tg.openLink) tg.openLink(url);
-  else if (/^happ:\/\//i.test(url)) window.location.href = url;
   else window.open(url, '_blank');
 }
 
@@ -1557,14 +1591,12 @@ async function openConnectModal(user) {
   const guide = CONNECT_GUIDES[detectedOS] || CONNECT_GUIDES.windows;
   const installTarget = HAPP_LINKS[detectedOS] || HAPP_LINKS.windows;
 
-  document.getElementById('connect-url-label').textContent = 'Зашифрованная ссылка happ';
-  document.getElementById('connect-url-val').textContent = 'Подготавливаем защищенную ссылку…';
+  document.getElementById('connect-url-box').style.display = 'none';
   document.getElementById('connect-step-1').innerHTML = guide.installStep;
   document.getElementById('connect-step-2').innerHTML = guide.importStep;
   document.getElementById('connect-step-3').innerHTML = guide.finishStep;
   document.getElementById('connect-os-label').textContent = installTarget.source || OS_LABELS[detectedOS];
   document.getElementById('open-happ-btn').disabled = true;
-  document.getElementById('copy-connect-url').disabled = true;
 
   document.getElementById('install-happ-btn').onclick = () => {
     openUrl(installTarget.url);
@@ -1574,19 +1606,12 @@ async function openConnectModal(user) {
 
   try {
     const encryptedLink = await getEncryptedHappLink(subUrl);
-    document.getElementById('connect-url-val').textContent = encryptedLink;
-    document.getElementById('copy-connect-url').disabled = false;
     document.getElementById('open-happ-btn').disabled = false;
-
-    document.getElementById('copy-connect-url').onclick = () =>
-      navigator.clipboard.writeText(encryptedLink).then(() => showToast('Ссылка скопирована ✓'));
 
     document.getElementById('open-happ-btn').onclick = () => {
       openAppLink(encryptedLink);
     };
   } catch (error) {
-    document.getElementById('connect-url-val').textContent = 'Не удалось подготовить зашифрованную ссылку';
-    document.getElementById('copy-connect-url').disabled = true;
     document.getElementById('open-happ-btn').disabled = true;
     showToast('Ошибка подготовки ссылки happ');
   }
@@ -1848,6 +1873,7 @@ function bindSupportActions() {
 }
 
 function setTrialBusy(isBusy) {
+  document.getElementById('trial-channel-btn').disabled = isBusy;
   document.getElementById('trial-claim-btn').disabled = isBusy;
 }
 
@@ -1860,7 +1886,7 @@ function setTrialMessage(text, isError) {
 function openTrialModal() {
   const days = getTrialDays();
   document.getElementById('trial-modal-title').textContent = `Получить ${days} дня бесплатно`;
-  document.getElementById('trial-modal-desc').textContent = `Подпишитесь на новостной канал averra и подтвердите подписку. После проверки мы сразу начислим вам ${days} дня доступа.`;
+  document.getElementById('trial-modal-desc').textContent = `Подпишитесь на новостной канал averra, затем вернитесь сюда и подтвердите подписку. После проверки мы сразу начислим вам ${days} дня доступа.`;
   document.getElementById('trial-claim-btn').innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <polyline points="2,8 6,12 14,4" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>Проверить подписку и получить ${days} дня`;
@@ -1868,6 +1894,17 @@ function openTrialModal() {
   setTrialMessage('', false);
   openModal('trial-modal');
 }
+
+document.getElementById('trial-channel-btn').onclick = () => {
+  const channelUrl = APP_CONFIG.channelUrl || DEFAULT_APP_CONFIG.channelUrl;
+  if (!channelUrl) {
+    setTrialMessage('Ссылка на канал пока не настроена', true);
+    return;
+  }
+
+  openUrl(channelUrl);
+  setTrialMessage('Подпишитесь на канал, затем вернитесь и подтвердите подписку', false);
+};
 
 document.getElementById('trial-claim-btn').onclick = async () => {
   if (!tgUser?.id) {
