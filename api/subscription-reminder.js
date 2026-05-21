@@ -6,6 +6,7 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SUPPORT_USERNAME = (process.env.SUPPORT_USERNAME || '').replace('@', '');
 const BRAND_NAME = process.env.BRAND_NAME || 'averra';
 const CRON_SECRET = process.env.CRON_SECRET || '';
+const DISPLAY_TIME_ZONE = process.env.DISPLAY_TIME_ZONE || 'Europe/Moscow';
 const REMINDER_MARKER = 'exp_notice_v2:';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
@@ -61,6 +62,7 @@ function formatExpireDate(iso) {
     month: 'long',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: DISPLAY_TIME_ZONE,
   });
 }
 
