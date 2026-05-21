@@ -734,6 +734,16 @@
     <div class="promo-result" id="broadcast-result"></div>
 
     <div class="admin-card">
+      <div class="admin-card-title">Сообщение по Telegram ID</div>
+      <input class="modal-promo-input" id="direct-message-target" type="text" inputmode="numeric" placeholder="Telegram ID пользователя" autocomplete="off" autocorrect="off" spellcheck="false" />
+      <textarea class="modal-promo-input admin-textarea" id="direct-message-text" placeholder="Введите сообщение для пользователя"></textarea>
+      <div class="admin-note">Сообщение отправится только указанному пользователю в Telegram.</div>
+    </div>
+
+    <button class="btn-primary" id="direct-message-send-btn" style="margin-bottom:10px">Отправить сообщение</button>
+    <div class="promo-result" id="direct-message-result"></div>
+
+    <div class="admin-card">
       <div class="admin-card-title">Репост поста</div>
       <input class="modal-promo-input" id="repost-post-input" type="text" placeholder="Ссылка на пост или ID сообщения" autocomplete="off" autocorrect="off" spellcheck="false" />
       <div class="admin-note">Поддерживаются ссылки вида `t.me/channel/123`, `t.me/s/channel/123`, `t.me/c/.../123` и просто ID сообщения.</div>
@@ -767,7 +777,7 @@
 
       <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
         <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Подписка</div>
-        <p>Уведомление о том, что подписка закончится, приходит за один день до окончания подписки.</p>
+        <p>За сутки до окончания подписки мы начинаем присылать напоминания о продлении каждые три часа.</p>
       </div>
 
       <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
@@ -1142,6 +1152,12 @@ function setBroadcastBusy(isBusy) {
   document.getElementById('broadcast-send-btn').disabled = isBusy;
   document.getElementById('broadcast-photo-btn').disabled = isBusy;
   document.getElementById('broadcast-clear-photo-btn').disabled = isBusy;
+}
+
+function setDirectMessageBusy(isBusy) {
+  document.getElementById('direct-message-send-btn').disabled = isBusy;
+  document.getElementById('direct-message-target').disabled = isBusy;
+  document.getElementById('direct-message-text').disabled = isBusy;
 }
 
 function setRepostBusy(isBusy) {
@@ -1684,6 +1700,7 @@ async function openAdminModal() {
 
   setPromoMessage('maintenance-admin-result', '', false);
   setPromoMessage('broadcast-result', '', false);
+  setPromoMessage('direct-message-result', '', false);
   setPromoMessage('repost-post-result', '', false);
   updateMaintenanceAdminUi();
   renderBroadcastPreview();
@@ -1808,6 +1825,63 @@ document.getElementById('broadcast-send-btn').onclick = async () => {
     setPromoMessage('broadcast-result', error.message || 'Ошибка отправки', true);
   } finally {
     setBroadcastBusy(false);
+  }
+};
+
+document.getElementById('direct-message-send-btn').onclick = async () => {
+  if (!currentIsAdmin || !tgUser?.id) {
+    setPromoMessage('direct-message-result', 'Недостаточно прав', true);
+    return;
+  }
+
+  const targetTelegramId = document.getElementById('direct-message-target').value.trim();
+  const text = document.getElementById('direct-message-text').value.trim();
+
+  if (!targetTelegramId) {
+    setPromoMessage('direct-message-result', 'Введите Telegram ID пользователя', true);
+    return;
+  }
+
+  if (!/^\d{4,20}$/.test(targetTelegramId)) {
+    setPromoMessage('direct-message-result', 'Telegram ID указан неверно', true);
+    return;
+  }
+
+  if (!text) {
+    setPromoMessage('direct-message-result', 'Введите сообщение', true);
+    return;
+  }
+
+  setDirectMessageBusy(true);
+  setPromoMessage('direct-message-result', 'Отправляем сообщение…', false);
+
+  try {
+    const r = await fetch('/api/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: tgUser.id,
+        targetTelegramId,
+        text,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      let msg = 'Не удалось отправить сообщение';
+      if (data.error === 'invalid target telegram id') msg = 'Telegram ID указан неверно';
+      else if (data.error === 'message or image required') msg = 'Введите сообщение';
+      throw new Error(msg);
+    }
+
+    setPromoMessage(
+      'direct-message-result',
+      Number(data.sent || 0) ? 'Сообщение отправлено' : 'Сообщение не доставлено',
+      Number(data.sent || 0) === 0
+    );
+  } catch (error) {
+    setPromoMessage('direct-message-result', error.message || 'Ошибка отправки', true);
+  } finally {
+    setDirectMessageBusy(false);
   }
 };
 

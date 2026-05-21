@@ -71,6 +71,10 @@ function collectRecipients(users) {
   return recipients;
 }
 
+function isValidTelegramId(value = '') {
+  return /^\d{4,20}$/.test(String(value).trim());
+}
+
 async function telegramJsonRequest(method, payload) {
   if (!TELEGRAM_BOT_TOKEN) {
     throw new Error('TELEGRAM_BOT_TOKEN env var is not set');
@@ -179,17 +183,23 @@ export default async function handler(req) {
     const text = String(body.text || '').trim();
     const imageDataUrl = String(body.imageDataUrl || '').trim();
     const imageName = String(body.imageName || '').trim();
+    const targetTelegramId = String(body.targetTelegramId || '').trim();
 
     if (!text && !imageDataUrl) {
       return json({ error: 'message or image required' }, 400);
+    }
+
+    if (targetTelegramId && !isValidTelegramId(targetTelegramId)) {
+      return json({ error: 'invalid target telegram id' }, 400);
     }
 
     if (imageDataUrl && text.length > 1024) {
       return json({ error: 'message too long' }, 400);
     }
 
-    const users = await listUsers();
-    const recipients = collectRecipients(users);
+    const recipients = targetTelegramId
+      ? [{ telegramId: targetTelegramId }]
+      : collectRecipients(await listUsers());
     let imageBlob = null;
 
     if (imageDataUrl) {

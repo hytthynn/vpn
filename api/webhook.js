@@ -7,6 +7,7 @@ const NGINX_COOKIE = process.env.NGINX_COOKIE;
 
 const YOOMONEY_SECRET = process.env.YOOMONEY_SECRET;
 export const WALLET_ID = process.env.WALLET_ID;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 // Планы: label → кол-во дней подписки
 const PLANS = {
@@ -124,6 +125,26 @@ async function panelPatch(path, body) {
   return JSON.parse(text);
 }
 
+function isAdminDescription(description = '') {
+  return String(description).toLowerCase().includes('admin');
+}
+
+function getTelegramId(user) {
+  const raw = user?.telegramId ?? user?.tgId ?? user?.telegram_id;
+  if (!raw) return '';
+  return String(raw).trim();
+}
+
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
 function extractUser(d) {
   if (!d) return null;
   if (d.response?.uuid) return d.response;
@@ -169,6 +190,87 @@ async function extendSubscription(user, days) {
   const newExp  = new Date(base.getTime() + days * 86400000).toISOString();
   await panelPatch('/api/users', { uuid: user.uuid, expireAt: newExp, status: 'ACTIVE' });
   return newExp;
+}
+
+async function telegramRequest(method, payload) {
+  if (!TELEGRAM_BOT_TOKEN) {
+    throw new Error('TELEGRAM_BOT_TOKEN env var is not set');
+  }
+
+  const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.ok === false) {
+    throw new Error(`Telegram ${method} failed: ${JSON.stringify(data).slice(0, 300)}`);
+  }
+
+  return data;
+}
+
+async function listAdminRecipients() {
+  const data = await panelGet('/api/users?size=500');
+  const users = data?.response?.users ?? data?.users ?? data?.response ?? [];
+  const seen = new Set();
+  const admins = [];
+
+  for (const user of Array.isArray(users) ? users : []) {
+    if (!isAdminDescription(user.description || '')) continue;
+
+    const telegramId = getTelegramId(user);
+    if (!telegramId || seen.has(telegramId)) continue;
+
+    seen.add(telegramId);
+    admins.push({
+      telegramId,
+      username: user.username || '',
+    });
+  }
+
+  return admins;
+}
+
+function formatPlanLabel(plan) {
+  if (plan === '12m') return '12 месяцев';
+  if (plan === '3m') return '3 месяца';
+  if (plan === '1m') return '1 месяц';
+  return plan || 'неизвестно';
+}
+
+async function notifyAdminsAboutPayment(user, payment) {
+  const admins = await listAdminRecipients();
+  if (!admins.length) {
+    console.warn('[webhook] no admin recipients for payment notification');
+    return;
+  }
+
+  const userTelegramId = getTelegramId(user);
+  const userName = user.username ? '@' + user.username : 'без username';
+  const text =
+`<b>✅ Успешное пополнение</b>
+
+Пользователь: <b>${escapeHtml(userName)}</b>
+Telegram ID: <code>${escapeHtml(userTelegramId)}</code>
+Тариф: <b>${escapeHtml(formatPlanLabel(payment.plan))}</b>
+Начислено: <b>${payment.days} дн.</b>
+Сумма: <b>${payment.amount}</b>
+Операция: <code>${escapeHtml(payment.operationId || '—')}</code>`;
+
+  for (const admin of admins) {
+    try {
+      await telegramRequest('sendMessage', {
+        chat_id: Number(admin.telegramId),
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      });
+    } catch (error) {
+      console.error('[webhook] admin notify error:', admin.telegramId, error);
+    }
+  }
 }
 
 function readTransactionLog(description = '') {
@@ -323,6 +425,17 @@ export default async function handler(req) {
     });
   } catch (err) {
     console.error('[webhook] save transaction error:', err);
+  }
+
+  try {
+    await notifyAdminsAboutPayment(user, {
+      operationId,
+      amount,
+      days,
+      plan,
+    });
+  } catch (err) {
+    console.error('[webhook] admin notify fatal error:', err);
   }
 
   return new Response('ok', { status: 200, headers: CORS });

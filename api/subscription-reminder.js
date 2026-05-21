@@ -6,8 +6,9 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SUPPORT_USERNAME = (process.env.SUPPORT_USERNAME || '').replace('@', '');
 const BRAND_NAME = process.env.BRAND_NAME || 'averra';
 const CRON_SECRET = process.env.CRON_SECRET || '';
-const REMINDER_MARKER = 'exp_notice_v1:';
+const REMINDER_MARKER = 'exp_notice_v2:';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -28,19 +29,27 @@ function isAuthorized(req) {
 }
 
 function readReminderMarker(description = '') {
-  const match = String(description).match(/exp_notice_v1:([^\s]+)/);
+  const match = String(description).match(/exp_notice_v2:([^\s]+)/);
   if (!match) return '';
 
   try {
-    return decodeURIComponent(match[1]);
+    const parsed = JSON.parse(decodeURIComponent(match[1]));
+    if (!parsed || typeof parsed !== 'object') return '';
+    return {
+      expireAt: String(parsed.expireAt || ''),
+      slotStart: Number(parsed.slotStart || 0),
+    };
   } catch {
     return '';
   }
 }
 
-function writeReminderMarker(description = '', expireAt = '') {
-  const cleanDescription = String(description).replace(/\s*exp_notice_v1:[^\s]+/g, '').trim();
-  const payload = REMINDER_MARKER + encodeURIComponent(expireAt);
+function writeReminderMarker(description = '', expireAt = '', slotStart = 0) {
+  const cleanDescription = String(description)
+    .replace(/\s*exp_notice_v1:[^\s]+/g, '')
+    .replace(/\s*exp_notice_v2:[^\s]+/g, '')
+    .trim();
+  const payload = REMINDER_MARKER + encodeURIComponent(JSON.stringify({ expireAt, slotStart }));
   return cleanDescription ? `${cleanDescription} ${payload}` : payload;
 }
 
@@ -146,8 +155,11 @@ function shouldNotify(user, now) {
   const diffMs = expireAtMs - now;
   if (diffMs <= 0 || diffMs > ONE_DAY_MS) return false;
 
+  const currentSlotStart = Math.floor(now / THREE_HOURS_MS) * THREE_HOURS_MS;
   const remindedFor = readReminderMarker(user.description || '');
-  return remindedFor !== expireAt;
+  if (!remindedFor) return true;
+
+  return remindedFor.expireAt !== expireAt || remindedFor.slotStart !== currentSlotStart;
 }
 
 export default async function handler(req) {
@@ -171,10 +183,15 @@ export default async function handler(req) {
 
     for (const user of candidates) {
       try {
+        const slotStart = Math.floor(now / THREE_HOURS_MS) * THREE_HOURS_MS;
         await sendReminder(req, user);
         await panelPatch('/api/users', {
           uuid: user.uuid,
-          description: writeReminderMarker(user.description || '', user.expireAt ?? user.expiredAt ?? ''),
+          description: writeReminderMarker(
+            user.description || '',
+            user.expireAt ?? user.expiredAt ?? '',
+            slotStart
+          ),
         });
         results.push({
           uuid: user.uuid,
