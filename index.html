@@ -476,9 +476,9 @@
         <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.72 3h16.92a2 2 0 001.72-3l-8.47-14.14a2 2 0 00-3.44 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div class="maintenance-title">Технические работы</div>
+    <div class="maintenance-title" id="maintenance-title">Технические работы</div>
     <div class="maintenance-text" id="maintenance-text">Сервис временно недоступен. Пожалуйста, попробуйте позже.</div>
-    <div class="maintenance-caption">Доступ восстановится после завершения работ.</div>
+    <div class="maintenance-caption" id="maintenance-caption">Доступ восстановится после завершения работ.</div>
   </div>
 </div>
 
@@ -651,16 +651,6 @@
     </div>
 
     <div class="promo-result" id="trial-result"></div>
-
-    <button class="btn-secondary" id="trial-channel-btn" style="margin-bottom:10px">
-      <span class="btn-label">
-        <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
-          <path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-        </svg>
-        Подписаться на канал
-      </span>
-      <span class="btn-platform">Telegram</span>
-    </button>
 
     <button class="btn-primary" id="trial-claim-btn" style="margin-bottom:10px">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -892,9 +882,17 @@ let DEFAULT_SQUAD_UUID = '';
 let currentUser = null;
 let currentIsAdmin = false;
 let maintenanceState = { enabled: false, message: 'Сервис временно недоступен. Пожалуйста, попробуйте позже.' };
+let serviceBlockState = null;
 let broadcastImageDataUrl = '';
 let broadcastImageName = '';
 const DEFAULT_MAINTENANCE_MESSAGE = 'Сервис временно недоступен. Пожалуйста, попробуйте позже.';
+const DEFAULT_MAINTENANCE_CAPTION = 'Доступ восстановится после завершения работ.';
+const TELEGRAM_REQUIRED_STATE = {
+  reason: 'telegram',
+  title: 'Откройте через Telegram',
+  message: 'Это приложение работает только внутри Telegram Mini App.',
+  caption: 'Перейдите в бота и запустите приложение из Telegram.',
+};
 const MAX_BROADCAST_IMAGE_BYTES = 8 * 1024 * 1024;
 const APP_BOOT_MIN_MS = 900;
 const appBootStartedAt = Date.now();
@@ -1147,17 +1145,46 @@ function getMaintenanceMessage(state = maintenanceState) {
   return String(state?.message || DEFAULT_MAINTENANCE_MESSAGE).trim() || DEFAULT_MAINTENANCE_MESSAGE;
 }
 
+function setServiceBlock(message, caption = 'Пожалуйста, попробуйте снова чуть позже.') {
+  serviceBlockState = {
+    reason: 'service',
+    title: 'Сервис временно недоступен',
+    message: String(message || DEFAULT_MAINTENANCE_MESSAGE).trim() || DEFAULT_MAINTENANCE_MESSAGE,
+    caption,
+  };
+}
+
+function clearServiceBlock() {
+  serviceBlockState = null;
+}
+
+function getBlockingState() {
+  if (maintenanceState.enabled && !currentIsAdmin) {
+    return {
+      reason: 'maintenance',
+      title: 'Технические работы',
+      message: getMaintenanceMessage(),
+      caption: DEFAULT_MAINTENANCE_CAPTION,
+    };
+  }
+  if (!tgUser?.id) return TELEGRAM_REQUIRED_STATE;
+  if (serviceBlockState) return serviceBlockState;
+  return null;
+}
+
 function closeAllModals() {
   document.querySelectorAll('.modal-overlay.open').forEach((el) => closeModal(el.id));
 }
 
-function applyMaintenanceLock() {
-  const locked = Boolean(maintenanceState.enabled && !currentIsAdmin);
-  document.getElementById('maintenance-text').textContent = getMaintenanceMessage();
-  document.getElementById('maintenance-screen').classList.toggle('show', locked);
-  document.body.classList.toggle('maintenance-locked', locked);
-  if (locked) closeAllModals();
-  return locked;
+function applyBlockingScreen() {
+  const blockState = getBlockingState();
+  document.getElementById('maintenance-title').textContent = blockState?.title || 'Технические работы';
+  document.getElementById('maintenance-text').textContent = blockState?.message || DEFAULT_MAINTENANCE_MESSAGE;
+  document.getElementById('maintenance-caption').textContent = blockState?.caption || DEFAULT_MAINTENANCE_CAPTION;
+  document.getElementById('maintenance-screen').classList.toggle('show', Boolean(blockState));
+  document.body.classList.toggle('maintenance-locked', Boolean(blockState));
+  if (blockState) closeAllModals();
+  return blockState;
 }
 
 function updateMaintenanceAdminUi(updatedAt = '') {
@@ -1190,6 +1217,7 @@ async function fetchMaintenanceState() {
       enabled: Boolean(data.enabled),
       message: getMaintenanceMessage(data),
     };
+    clearServiceBlock();
     updateMaintenanceAdminUi(data.updatedAt || '');
   } catch (e) {
     console.warn('[maintenance] load error:', e.message);
@@ -1197,10 +1225,11 @@ async function fetchMaintenanceState() {
       enabled: Boolean(maintenanceState.enabled),
       message: getMaintenanceMessage(maintenanceState),
     };
+    setServiceBlock('Не удалось получить состояние сервиса. Пожалуйста, попробуйте позже.');
     updateMaintenanceAdminUi();
   }
 
-  return applyMaintenanceLock();
+  return applyBlockingScreen();
 }
 
 function setBroadcastBusy(isBusy) {
@@ -1522,7 +1551,7 @@ function renderButtons(user) {
   const block = document.getElementById('actions-block');
   block.innerHTML = '';
 
-  if (maintenanceState.enabled && !currentIsAdmin) return;
+  if (getBlockingState()) return;
 
   const st       = user?.status ?? 'NONE';
   const isActive = st === 'ACTIVE';
@@ -1637,19 +1666,28 @@ async function loadUserData() {
   const stxt = document.getElementById('status-text');
   const tval = document.getElementById('traffic-val');
   const exp  = document.getElementById('expire-text');
+  const ps = document.getElementById('profile-status');
 
   if (!tgUser?.id) {
     currentUser = null;
     currentIsAdmin = false;
+    clearServiceBlock();
     stxt.textContent = 'нет данных';
     exp.textContent  = 'войдите через Telegram';
+    tval.textContent = 'доступно только в Mini App';
+    ps.textContent = 'только Telegram';
+    ps.className = 'profile-value bad';
+    document.getElementById('profile-expire').textContent = '—';
+    document.getElementById('profile-traffic').textContent = '—';
     renderTransactions('');
     renderButtons(null);
+    applyBlockingScreen();
     finishAppBoot();
     return;
   }
 
   try {
+    clearServiceBlock();
     let user = await findUser(tgUser.id);
 
     // ── Автосоздание ──
@@ -1667,11 +1705,18 @@ async function loadUserData() {
     if (!user) {
       currentUser = null;
       currentIsAdmin = false;
+      setServiceBlock('Не удалось загрузить профиль пользователя. Пожалуйста, попробуйте позже.');
       stxt.textContent = 'ошибка';
       dot.classList.add('inactive');
       exp.textContent  = 'обратитесь в поддержку';
+      tval.textContent = 'профиль недоступен';
+      ps.textContent = 'сервис недоступен';
+      ps.className = 'profile-value bad';
+      document.getElementById('profile-expire').textContent = '—';
+      document.getElementById('profile-traffic').textContent = '—';
       renderTransactions('');
       renderButtons(null);
+      applyBlockingScreen();
       return;
     }
 
@@ -1706,7 +1751,6 @@ async function loadUserData() {
       : expDate ? 'истекла ' + fmtDate(expAt) : '—';
 
     // ── Профиль модал ──
-    const ps = document.getElementById('profile-status');
     ps.textContent = STATUS_RU[st] ?? st;
     ps.className   = 'profile-value ' + (isActive ? 'ok' : 'bad');
     document.getElementById('profile-expire').textContent  = expAt ? fmtDate(expAt) : '—';
@@ -1727,10 +1771,10 @@ async function loadUserData() {
     if (lockedByMaintenance) {
       dot.classList.remove('inactive');
       dot.classList.add('bad');
-      stxt.textContent = 'технические работы';
-      tval.textContent = 'доступ временно ограничен';
-      exp.textContent = getMaintenanceMessage();
-      ps.textContent = 'технические работы';
+      stxt.textContent = lockedByMaintenance.reason === 'maintenance' ? 'технические работы' : 'сервис недоступен';
+      tval.textContent = lockedByMaintenance.reason === 'maintenance' ? 'доступ временно ограничен' : 'ошибка загрузки';
+      exp.textContent = lockedByMaintenance.message;
+      ps.textContent = lockedByMaintenance.reason === 'maintenance' ? 'технические работы' : 'сервис недоступен';
       ps.className = 'profile-value bad';
       document.getElementById('profile-expire').textContent = '—';
       document.getElementById('profile-traffic').textContent = '—';
@@ -1744,10 +1788,17 @@ async function loadUserData() {
     console.error('loadUserData:', err);
     currentUser = null;
     currentIsAdmin = false;
+    setServiceBlock('Не удалось загрузить данные сервиса. Пожалуйста, попробуйте позже.');
     document.getElementById('status-text').textContent = 'ошибка загрузки';
     document.getElementById('expire-text').textContent  = 'попробуйте позже';
+    document.getElementById('traffic-val').textContent = 'сервис недоступен';
+    ps.textContent = 'сервис недоступен';
+    ps.className = 'profile-value bad';
+    document.getElementById('profile-expire').textContent = '—';
+    document.getElementById('profile-traffic').textContent = '—';
     renderTransactions('');
     renderButtons(null);
+    applyBlockingScreen();
   } finally {
     finishAppBoot();
   }
@@ -1768,7 +1819,6 @@ function bindSupportActions() {
 }
 
 function setTrialBusy(isBusy) {
-  document.getElementById('trial-channel-btn').disabled = isBusy;
   document.getElementById('trial-claim-btn').disabled = isBusy;
 }
 
@@ -1781,7 +1831,7 @@ function setTrialMessage(text, isError) {
 function openTrialModal() {
   const days = getTrialDays();
   document.getElementById('trial-modal-title').textContent = `Получить ${days} дня бесплатно`;
-  document.getElementById('trial-modal-desc').textContent = `Подпишитесь на новостной канал averra и подтвердите подписку. После проверки мы сразу начислим вам ${days} дня доступа.`;
+  document.getElementById('trial-modal-desc').textContent = `Откройте новостной канал, подпишитесь и затем подтвердите подписку. После проверки мы сразу начислим вам ${days} дня доступа.`;
   document.getElementById('trial-claim-btn').innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <polyline points="2,8 6,12 14,4" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>Проверить подписку и получить ${days} дня`;
@@ -1790,7 +1840,7 @@ function openTrialModal() {
   openModal('trial-modal');
 }
 
-document.getElementById('trial-channel-btn').onclick = () => {
+document.getElementById('trial-channel-card').onclick = () => {
   const channelUrl = APP_CONFIG.channelUrl || DEFAULT_APP_CONFIG.channelUrl;
   if (!channelUrl) {
     setTrialMessage('Ссылка на канал пока не настроена', true);
@@ -1799,10 +1849,6 @@ document.getElementById('trial-channel-btn').onclick = () => {
 
   openUrl(channelUrl);
   setTrialMessage('Подпишитесь на канал, затем вернитесь и подтвердите подписку', false);
-};
-
-document.getElementById('trial-channel-card').onclick = () => {
-  document.getElementById('trial-channel-btn').click();
 };
 
 document.getElementById('trial-claim-btn').onclick = async () => {
