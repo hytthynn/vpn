@@ -20,6 +20,7 @@ export default function handler(req) {
     botUsername: process.env.BOT_USERNAME ?? '',
     supportUsername: process.env.SUPPORT_USERNAME ?? '',
     channelUrl: process.env.CHANNEL_URL ?? '',
+    trialDays: positiveNumber(process.env.TRIAL_DAYS, 3),
     walletId: process.env.WALLET_ID ?? '',
     plans: {
       '1m': { amount: positiveNumber(process.env.PLAN_1M_AMOUNT, 150) },

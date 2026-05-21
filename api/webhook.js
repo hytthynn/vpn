@@ -399,6 +399,16 @@ function writeTransactionLog(description = '', transactions = []) {
   return cleanDescription ? `${cleanDescription} ${payload}` : payload;
 }
 
+function markTrialSkipped(description = '') {
+  const clean = String(description)
+    .replace(/\btrial_status:(?:available|claimed|skipped)\b/g, '')
+    .replace(/\btrial_claimed_at:[^\s]+\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return [clean, 'trial_status:skipped'].filter(Boolean).join(' ').trim();
+}
+
 async function saveSuccessfulTransaction(tgId, transaction) {
   const freshUser = await findUser(tgId);
   if (!freshUser?.uuid) {
@@ -416,7 +426,10 @@ async function saveSuccessfulTransaction(tgId, transaction) {
   }
 
   const nextTransactions = [transaction, ...currentTransactions].slice(0, 20);
-  const nextDescription = writeTransactionLog(freshUser.description || '', nextTransactions);
+  const baseDescription = /\btrial_status:available\b/.test(freshUser.description || '')
+    ? markTrialSkipped(freshUser.description || '')
+    : (freshUser.description || '');
+  const nextDescription = writeTransactionLog(baseDescription, nextTransactions);
   await panelPatch('/api/users', { uuid: freshUser.uuid, description: nextDescription });
   console.log('[tx] transaction saved:', transaction.operationId || transaction.paidAt);
 }

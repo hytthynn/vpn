@@ -40,6 +40,16 @@ function parseActivationLimit(value) {
   return count;
 }
 
+function markTrialSkipped(description = '') {
+  const clean = String(description)
+    .replace(/\btrial_status:(?:available|claimed|skipped)\b/g, '')
+    .replace(/\btrial_claimed_at:[^\s]+\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return [clean, 'trial_status:skipped'].filter(Boolean).join(' ').trim();
+}
+
 function toPublicPromo(promo) {
   const redemptionsCount = Array.isArray(promo.redemptions) ? promo.redemptions.length : 0;
   const activationLimit = Number(promo.activationLimit ?? 1);
@@ -153,6 +163,12 @@ async function handleApply(body) {
   }
 
   const expireAt = await extendSubscription(user, promo.days);
+  if (/\btrial_status:available\b/.test(user.description || '')) {
+    await panelPatch('/api/users', {
+      uuid: user.uuid,
+      description: markTrialSkipped(user.description || ''),
+    });
+  }
   const now = new Date().toISOString();
   const nextPromo = {
     ...promo,

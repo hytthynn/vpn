@@ -628,6 +628,50 @@
   </div>
 </div>
 
+<!-- ═══ TRIAL MODAL ═══ -->
+<div class="modal-overlay" id="trial-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="trial-modal-title">Получить 3 дня бесплатно</div>
+
+    <div class="ref-desc" id="trial-modal-desc">
+      Подпишитесь на новостной канал averra и подтвердите подписку. После проверки мы сразу начислим вам 3 дня доступа.
+    </div>
+
+    <div class="support-option" id="trial-channel-card">
+      <div class="support-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="#a09e9a" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="support-title">Новостной канал</div>
+        <div class="support-desc">Подпишитесь, затем вернитесь и подтвердите подписку</div>
+      </div>
+    </div>
+
+    <div class="promo-result" id="trial-result"></div>
+
+    <button class="btn-secondary" id="trial-channel-btn" style="margin-bottom:10px">
+      <span class="btn-label">
+        <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M17 3L2 9l5.5 2.5L10 17l2.5-5.5L17 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        Подписаться на канал
+      </span>
+      <span class="btn-platform">Telegram</span>
+    </button>
+
+    <button class="btn-primary" id="trial-claim-btn" style="margin-bottom:10px">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <polyline points="2,8 6,12 14,4" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Проверить подписку и получить 3 дня
+    </button>
+    <button class="close-btn" id="trial-close">Закрыть</button>
+  </div>
+</div>
+
 <!-- ═══ REFERRAL MODAL ═══ -->
 <div class="modal-overlay" id="referral-modal">
   <div class="modal">
@@ -772,7 +816,7 @@
 
       <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
         <div style="font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Демо период</div>
-        <p>Всем пользователям доступен демо период в течение трёх дней с момента авторизации в боте.</p>
+        <p id="terms-trial-text">Новым пользователям доступен пробный период 3 дня после подписки на новостной канал и подтверждения внутри приложения.</p>
       </div>
 
       <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:8px;">
@@ -815,6 +859,7 @@ const DEFAULT_APP_CONFIG = {
   botUsername: 'averravpnbot',
   supportUsername: 'hytthynn',
   channelUrl: 'https://t.me/averravpn',
+  trialDays: 3,
   plans: {
     '1m':  { amount: 150, label: '1 месяц' },
     '3m':  { amount: 380, label: '3 месяца' },
@@ -874,6 +919,7 @@ fetch('/api/config').then(r => r.json()).then(cfg => {
     botUsername: cfg.botUsername || APP_CONFIG.botUsername,
     supportUsername: cfg.supportUsername || APP_CONFIG.supportUsername,
     channelUrl: cfg.channelUrl || APP_CONFIG.channelUrl,
+    trialDays: getPositiveNumber(cfg.trialDays, APP_CONFIG.trialDays),
     plans: {
       '1m': {
         ...APP_CONFIG.plans['1m'],
@@ -970,21 +1016,22 @@ async function findUser(tgId) {
 }
 
 async function createUser(tgId, tgName) {
-  const TRIAL_DAYS = 3;
   // Формируем допустимый username
   const clean = (tgName || '').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').slice(0, 24).replace(/^_|_$/g, '');
   const suffix = String(tgId).slice(-5);
   const username = (clean.length >= 2 ? clean + '_' + suffix : 'user_' + suffix);
 
-  // description: сохраняем ID реферера чтобы webhook мог начислить бонус
-  const description = REF_INVITER_ID ? 'ref:' + REF_INVITER_ID : '';
+  // description: сохраняем ID реферера и доступность пробного периода для новых пользователей
+  const descriptionParts = [];
+  if (REF_INVITER_ID) descriptionParts.push('ref:' + REF_INVITER_ID);
+  descriptionParts.push('trial_status:available');
+  const description = descriptionParts.join(' ').trim();
 
-  const expireAt = new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString();
   const d = await proxyPost('/api/users', {
     username,
     telegramId: Number(tgId),
-    expireAt,
-    status: 'ACTIVE',
+    expireAt: new Date().toISOString(),
+    status: 'EXPIRED',
     trafficLimitBytes: 0,
     trafficLimitStrategy: 'NO_RESET',
     ...(description ? { description } : {}),
@@ -1044,6 +1091,9 @@ function getPositiveNumber(value, fallback) {
 function getPlanAmount(planKey) {
   return getPositiveNumber(APP_CONFIG?.plans?.[planKey]?.amount, DEFAULT_APP_CONFIG.plans[planKey].amount);
 }
+function getTrialDays() {
+  return getPositiveNumber(APP_CONFIG?.trialDays, DEFAULT_APP_CONFIG.trialDays);
+}
 function getPlanPeriod(planKey) {
   if (planKey === '1m') return 'в месяц';
   const months = planKey === '3m' ? 3 : 12;
@@ -1059,6 +1109,11 @@ function applyRuntimeConfig() {
   document.getElementById('plan-period-1m').textContent = getPlanPeriod('1m');
   document.getElementById('plan-period-3m').textContent = getPlanPeriod('3m');
   document.getElementById('plan-period-12m').textContent = getPlanPeriod('12m');
+  const trialDays = getTrialDays();
+  const trialTerms = document.getElementById('terms-trial-text');
+  if (trialTerms) {
+    trialTerms.textContent = `Новым пользователям доступен пробный период ${trialDays} дня после подписки на новостной канал и подтверждения внутри приложения.`;
+  }
   bindSupportActions();
   updatePaySummary();
   renderButtons(currentUser);
@@ -1233,6 +1288,14 @@ function renderTransactions(description = '') {
   `).join('');
 }
 
+function getUserDescription(user) {
+  return String(user?.description || '');
+}
+
+function hasAvailableTrial(user) {
+  return /(?:^|\s)trial_status:available(?:\s|$)/.test(getUserDescription(user));
+}
+
 // ════════════════════════════════════════════
 //  PAYMENT URL
 // ════════════════════════════════════════════
@@ -1261,6 +1324,7 @@ document.getElementById('buy-close').onclick      = () => closeModal('buy-modal'
 document.getElementById('profile-close').onclick  = () => closeModal('profile-modal');
 document.getElementById('support-close').onclick  = () => closeModal('support-modal');
 document.getElementById('connect-close').onclick  = () => closeModal('connect-modal');
+document.getElementById('trial-close').onclick    = () => closeModal('trial-modal');
 document.getElementById('referral-close').onclick = () => closeModal('referral-modal');
 document.getElementById('promo-close').onclick    = () => closeModal('promo-modal');
 document.getElementById('admin-close').onclick    = () => closeModal('admin-modal');
@@ -1462,6 +1526,7 @@ function renderButtons(user) {
 
   const st       = user?.status ?? 'NONE';
   const isActive = st === 'ACTIVE';
+  const canClaimTrial = user && !isActive && hasAvailableTrial(user);
   const subUrl   = user
     ? (user.subscriptionUrl ?? user.subUrl ?? user.sub_url ?? user.subscriptionLink ?? user.subscribeUrl ?? null)
     : null;
@@ -1479,6 +1544,16 @@ function renderButtons(user) {
       else window.open(subUrl, '_blank');
     };
     block.appendChild(b);
+  }
+
+  if (canClaimTrial) {
+    const trialBtn = document.createElement('button');
+    trialBtn.className = 'btn-primary btn-green';
+    trialBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M10 2l2.2 4.46 4.92.72-3.56 3.47.84 4.91L10 13.77l-4.4 2.31.84-4.91L2.88 7.18l4.92-.72L10 2z" stroke="#0d2e12" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>Получить ${getTrialDays()} дня бесплатно`;
+    trialBtn.onclick = () => openTrialModal();
+    block.appendChild(trialBtn);
   }
 
   // ── ПРОДЛИТЬ / КУПИТЬ ──
@@ -1583,7 +1658,7 @@ async function loadUserData() {
       try {
         const name = tgUser.username || tgUser.first_name || '';
         user = await createUser(tgUser.id, name);
-        if (user) showToast('Добро пожаловать в averra! 👋');
+        if (user) showToast(`Профиль создан. Подпишитесь на канал, чтобы получить ${getTrialDays()} дня бесплатно`);
       } catch (e) {
         console.error('createUser:', e);
       }
@@ -1691,6 +1766,83 @@ function bindSupportActions() {
   document.getElementById('support-contact-btn').onclick = () => openTg('@' + supportUsername);
   document.getElementById('support-channel-btn').onclick = () => openUrl(channelUrl);
 }
+
+function setTrialBusy(isBusy) {
+  document.getElementById('trial-channel-btn').disabled = isBusy;
+  document.getElementById('trial-claim-btn').disabled = isBusy;
+}
+
+function setTrialMessage(text, isError) {
+  const el = document.getElementById('trial-result');
+  el.textContent = text;
+  el.className = 'promo-result' + (isError ? ' error' : '');
+}
+
+function openTrialModal() {
+  const days = getTrialDays();
+  document.getElementById('trial-modal-title').textContent = `Получить ${days} дня бесплатно`;
+  document.getElementById('trial-modal-desc').textContent = `Подпишитесь на новостной канал averra и подтвердите подписку. После проверки мы сразу начислим вам ${days} дня доступа.`;
+  document.getElementById('trial-claim-btn').innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <polyline points="2,8 6,12 14,4" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>Проверить подписку и получить ${days} дня`;
+  setTrialBusy(false);
+  setTrialMessage('', false);
+  openModal('trial-modal');
+}
+
+document.getElementById('trial-channel-btn').onclick = () => {
+  const channelUrl = APP_CONFIG.channelUrl || DEFAULT_APP_CONFIG.channelUrl;
+  if (!channelUrl) {
+    setTrialMessage('Ссылка на канал пока не настроена', true);
+    return;
+  }
+
+  openUrl(channelUrl);
+  setTrialMessage('Подпишитесь на канал, затем вернитесь и подтвердите подписку', false);
+};
+
+document.getElementById('trial-channel-card').onclick = () => {
+  document.getElementById('trial-channel-btn').click();
+};
+
+document.getElementById('trial-claim-btn').onclick = async () => {
+  if (!tgUser?.id) {
+    setTrialMessage('Откройте приложение через Telegram', true);
+    return;
+  }
+
+  setTrialBusy(true);
+  setTrialMessage('Проверяем подписку…', false);
+
+  try {
+    const r = await fetch('/api/trial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telegramId: tgUser.id }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      let msg = 'Не удалось активировать пробный период';
+      if (data.error === 'channel subscription required') msg = 'Сначала подпишитесь на новостной канал';
+      else if (data.error === 'trial already claimed') msg = 'Пробный период уже был активирован';
+      else if (data.error === 'trial not available') msg = 'Пробный период недоступен для этого аккаунта';
+      else if (data.error === 'trial verification unavailable') msg = 'Не удалось проверить подписку на канал';
+      else if (data.error === 'user not found') msg = 'Профиль не найден, попробуйте открыть приложение заново';
+      throw new Error(msg);
+    }
+
+    setTrialMessage(`Готово! Вам начислено ${Number(data.days || getTrialDays())} дня доступа`, false);
+    showToast('Пробный период активирован');
+    setTimeout(() => {
+      closeModal('trial-modal');
+      loadUserData();
+    }, 1200);
+  } catch (error) {
+    setTrialMessage(error.message || 'Ошибка соединения', true);
+  } finally {
+    setTrialBusy(false);
+  }
+};
 
 async function openAdminModal() {
   if (!currentIsAdmin) {
