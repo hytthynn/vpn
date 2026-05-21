@@ -8,6 +8,8 @@ const NGINX_COOKIE = process.env.NGINX_COOKIE;
 const YOOMONEY_SECRET = process.env.YOOMONEY_SECRET;
 export const WALLET_ID = process.env.WALLET_ID;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const BRAND_NAME = process.env.BRAND_NAME || 'averra';
+const DISPLAY_TIME_ZONE = process.env.DISPLAY_TIME_ZONE || 'Europe/Moscow';
 
 // Планы: label → кол-во дней подписки
 const PLANS = {
@@ -145,6 +147,55 @@ function escapeHtml(value = '') {
   }[char]));
 }
 
+function normalizeUrl(url = '') {
+  return String(url).trim().replace(/\/+$/, '');
+}
+
+function appendStartPayload(urlString, startPayload = '') {
+  const url = new URL(urlString);
+  if (startPayload) url.searchParams.set('startapp', startPayload);
+  return url.toString();
+}
+
+function isTelegramMiniAppUrl(url = '') {
+  return /^https:\/\/t\.me\/[^/]+\/app(?:[/?#]|$)/i.test(String(url).trim());
+}
+
+function buildWebAppUrl(req, startPayload = '') {
+  const explicitUrl = normalizeUrl(process.env.WEBAPP_URL);
+  const baseUrl = explicitUrl || new URL(req.url).origin;
+  return appendStartPayload(baseUrl + '/', startPayload);
+}
+
+function buildOpenAppButton(req, startPayload = '') {
+  const explicitUrl = normalizeUrl(process.env.WEBAPP_URL);
+  const targetUrl = explicitUrl ? appendStartPayload(explicitUrl, startPayload) : buildWebAppUrl(req, startPayload);
+
+  if (isTelegramMiniAppUrl(targetUrl)) {
+    return {
+      text: '📲 Открыть приложение',
+      url: targetUrl,
+    };
+  }
+
+  return {
+    text: '📲 Открыть приложение',
+    web_app: { url: targetUrl },
+  };
+}
+
+function formatExpireDate(iso) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'скоро';
+  return date.toLocaleString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: DISPLAY_TIME_ZONE,
+  });
+}
+
 function extractUser(d) {
   if (!d) return null;
   if (d.response?.uuid) return d.response;
@@ -273,6 +324,62 @@ Telegram ID: <code>${escapeHtml(userTelegramId)}</code>
   }
 }
 
+async function notifyUserAboutPayment(req, user, payment) {
+  const telegramId = getTelegramId(user);
+  if (!telegramId) {
+    console.warn('[webhook] user telegram id missing for payment notification');
+    return;
+  }
+
+  const text =
+`<b>✅ Пополнение прошло успешно</b>
+
+Спасибо за оплату ${escapeHtml(BRAND_NAME)}.
+Тариф: <b>${escapeHtml(formatPlanLabel(payment.plan))}</b>
+Начислено: <b>${payment.days} дн.</b>
+Сумма: <b>${payment.amount}</b>
+${payment.expireAt ? `Подписка активна до: <b>${escapeHtml(formatExpireDate(payment.expireAt))}</b>` : ''}`;
+
+  await telegramRequest('sendMessage', {
+    chat_id: Number(telegramId),
+    text,
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [buildOpenAppButton(req)],
+      ],
+    },
+    disable_web_page_preview: true,
+  });
+}
+
+async function notifyInviterAboutReferralPayment(req, inviter, bonus) {
+  const telegramId = getTelegramId(inviter);
+  if (!telegramId) {
+    console.warn('[webhook] inviter telegram id missing for referral notification');
+    return;
+  }
+
+  const text =
+`<b>🎉 Пополнение по вашей реферальной ссылке</b>
+
+Один из приглашённых пользователей оплатил подписку.
+Вам начислено: <b>${bonus.bonusDays} дн.</b>
+${bonus.expireAt ? `Подписка активна до: <b>${escapeHtml(formatExpireDate(bonus.expireAt))}</b>` : ''}`;
+
+  await telegramRequest('sendMessage', {
+    chat_id: Number(telegramId),
+    text,
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [buildOpenAppButton(req)],
+      ],
+    },
+    disable_web_page_preview: true,
+  });
+}
+
 function readTransactionLog(description = '') {
   const match = String(description).match(/txlog_v1:([^\s]+)/);
   if (!match) return [];
@@ -328,7 +435,7 @@ async function processReferralBonus(referredUser, paidDays) {
   const refMatch = desc.match(/ref:(\d+)/);
   if (!refMatch) {
     console.log('[ref] no inviter in description, skip');
-    return;
+    return null;
   }
 
   const inviterTgId = refMatch[1];
@@ -338,10 +445,10 @@ async function processReferralBonus(referredUser, paidDays) {
   const inviter = await findUser(inviterTgId);
   if (!inviter) {
     console.warn('[ref] inviter not found:', inviterTgId);
-    return;
+    return null;
   }
 
-  await extendSubscription(inviter, bonusDays);
+  const inviterExpireAt = await extendSubscription(inviter, bonusDays);
   console.log(`[ref] bonus ${bonusDays}d -> inviter ${inviterTgId} (${inviter.uuid})`);
 
   // Обновляем счётчик начисленных бонусов в description реферала
@@ -356,6 +463,12 @@ async function processReferralBonus(referredUser, paidDays) {
   } catch (e) {
     console.warn('[ref] description update failed (bonus already credited):', e.message);
   }
+
+  return {
+    inviter,
+    bonusDays,
+    expireAt: inviterExpireAt,
+  };
 }
 
 // ─── HANDLER ───────────────────────────────────────────────────────────────
@@ -401,8 +514,9 @@ export default async function handler(req) {
   if (!user) { console.warn('[webhook] user not found:', tgId); return new Response('user not found', { status: 200, headers: CORS }); }
 
   // 5. Продлеваем подписку
+  let expireAt;
   try {
-    await extendSubscription(user, days);
+    expireAt = await extendSubscription(user, days);
     console.log(`[webhook] extended ${tgId} by ${days}d (plan=${plan}, amount=${amount})`);
   } catch (err) {
     console.error('[webhook] extendSubscription error:', err);
@@ -410,7 +524,8 @@ export default async function handler(req) {
   }
 
   // 6. Реферальный бонус (не блокируем — ошибка бонуса не должна ронять webhook)
-  try { await processReferralBonus(user, days); }
+  let referralBonus = null;
+  try { referralBonus = await processReferralBonus(user, days); }
   catch (err) { console.error('[webhook] referral bonus error:', err); }
 
   // 7. Сохраняем транзакцию пользователя в description
@@ -436,6 +551,25 @@ export default async function handler(req) {
     });
   } catch (err) {
     console.error('[webhook] admin notify fatal error:', err);
+  }
+
+  try {
+    await notifyUserAboutPayment(req, user, {
+      amount,
+      days,
+      plan,
+      expireAt,
+    });
+  } catch (err) {
+    console.error('[webhook] user notify error:', err);
+  }
+
+  try {
+    if (referralBonus?.inviter && referralBonus?.bonusDays) {
+      await notifyInviterAboutReferralPayment(req, referralBonus.inviter, referralBonus);
+    }
+  } catch (err) {
+    console.error('[webhook] inviter notify error:', err);
   }
 
   return new Response('ok', { status: 200, headers: CORS });
