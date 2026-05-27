@@ -2103,7 +2103,7 @@ function openTrialModal() {
   document.getElementById('trial-modal-desc').textContent = `Откройте новостной канал, подпишитесь и затем подтвердите подписку. После проверки мы сразу начислим вам ${days} дня доступа.`;
   document.getElementById('trial-claim-btn').innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <polyline points="2,8 6,12 14,4" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>Проверить подписку и получить ${days} дня`;
+  </svg>Проверить подписку`;
   setTrialBusy(false);
   setTrialMessage('', false);
   openModal('trial-modal');
