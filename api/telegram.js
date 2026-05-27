@@ -142,7 +142,7 @@ async function sendInstructionVideoMessage(req, message, startPayload) {
 
   await telegramRequest('sendVideo', {
     chat_id: message.chat.id,
-    video: buildPublicAssetUrl(req, '/instruction.mp4'),
+    video: buildPublicAssetUrl(req, '/instruction-v2.mp4'),
     caption: 'В этом минутном видео мы подробно показали процесс установки и настройки VPN',
     reply_markup: keyboard,
     supports_streaming: true,
