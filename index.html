@@ -850,7 +850,7 @@
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <polyline points="2,8 6,12 14,4" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      Проверить подписку и получить 3 дня
+      Проверить подписку
     </button>
     <button class="close-btn" id="trial-close">Закрыть</button>
   </div>
@@ -1963,7 +1963,7 @@ async function loadUserData() {
       try {
         const name = tgUser.username || tgUser.first_name || '';
         user = await createUser(tgUser.id, name);
-        if (user) showToast(`Профиль создан. Подпишитесь на канал, чтобы получить ${getTrialDays()} дня бесплатно`);
+        if (user) showToast(`Добро пожаловать!`);
       } catch (e) {
         console.error('createUser:', e);
       }
