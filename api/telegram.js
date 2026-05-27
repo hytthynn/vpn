@@ -45,6 +45,10 @@ function buildWebAppUrl(req, startPayload) {
   return appendStartPayload(baseUrl + '/', startPayload);
 }
 
+function buildPublicAssetUrl(req, assetPath) {
+  return new URL(assetPath, req.url).toString();
+}
+
 function buildOpenAppButton(req, startPayload) {
   const explicitUrl = normalizeUrl(process.env.WEBAPP_URL);
   const targetUrl = explicitUrl ? appendStartPayload(explicitUrl, startPayload) : buildWebAppUrl(req, startPayload);
@@ -122,6 +126,26 @@ ${supportLine}`;
     text,
     reply_markup: keyboard,
     disable_web_page_preview: true,
+  });
+
+  await sendInstructionVideoMessage(req, message, startPayload);
+}
+
+async function sendInstructionVideoMessage(req, message, startPayload) {
+  const supportButton = buildSupportButton();
+  const keyboard = {
+    inline_keyboard: [
+      [buildOpenAppButton(req, startPayload)],
+      ...(supportButton ? [[supportButton]] : []),
+    ],
+  };
+
+  await telegramRequest('sendVideo', {
+    chat_id: message.chat.id,
+    video: buildPublicAssetUrl(req, '/instruction.mp4'),
+    caption: 'В этом минутном видео мы подробно показали процесс установки и настройки VPN',
+    reply_markup: keyboard,
+    supports_streaming: true,
   });
 }
 
