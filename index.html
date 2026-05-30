@@ -2486,9 +2486,9 @@ async function openReferralModal() {
     navigator.clipboard.writeText(refLink).then(() => showToast('Ссылка скопирована ✓'));
 
   document.getElementById('share-ref-btn').onclick = () => {
-    const text = 'Попробуй averra VPN — быстро и надёжно! ' + refLink;
+    const text = 'Пользуюсь AVERRA VPN — всего 99₽/мес, работает без сбоев. Попробуй 3 дня бесплатно по моей ссылке 🚀 ' + refLink;
     if (tg && tg.openTelegramLink) {
-      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(refLink) + '&text=' + encodeURIComponent('Попробуй averra VPN — быстро и надёжно!'));
+      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(refLink) + '&text=' + encodeURIComponent('Пользуюсь AVERRA VPN — всего 99₽/мес, работает без сбоев. Попробуй 3 дня бесплатно по моей ссылке 🚀'));
     } else if (navigator.share) {
       navigator.share({ title: 'averra VPN', text, url: refLink }).catch(() => {});
     } else {
